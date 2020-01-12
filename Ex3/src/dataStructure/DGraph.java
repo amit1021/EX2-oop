@@ -5,6 +5,14 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 
+import javax.swing.plaf.synth.SynthSpinnerUI;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONString;
+
+import utils.Point3D;
+
 public class DGraph implements graph, Serializable {
 	private HashMap<Integer, node_data> Vertex;
 	private HashMap<Integer, HashMap<Integer, edge_data>> Neib;
@@ -14,6 +22,46 @@ public class DGraph implements graph, Serializable {
 		this.Vertex = new HashMap<Integer, node_data>();
 		this.Neib = new HashMap<Integer, HashMap<Integer, edge_data>>();
 		this.mc = 0;
+	}
+
+	public void initFromJSON(String g) {
+		try {
+			JSONObject obj_JSONObject = new JSONObject(g);
+			JSONArray JSONArrayNodes = obj_JSONObject.getJSONArray("Nodes");
+			JSONArray JSONArrayEdges = obj_JSONObject.getJSONArray("Edges");
+			for (int i = 0; i < JSONArrayNodes.length(); i++) { // add the Vertexes by the position.
+				JSONObject JSON_Node = JSONArrayNodes.getJSONObject(i);
+				String pos = JSON_Node.getString("pos");
+				Point3D p = getXYZ(pos);
+				int id = JSON_Node.getInt("id");
+				node_data n = new nodeData(p, id);
+				addNode(n);
+			}
+
+			for (int i = 0; i < JSONArrayEdges.length(); i++) { // add the edges by the vertexes
+				JSONObject JSON_Edge = JSONArrayEdges.getJSONObject(i);
+				int src = JSON_Edge.getInt("src");
+				double w = JSON_Edge.getDouble("w");
+				int dest = JSON_Edge.getInt("dest");
+				connect(src, dest, w);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	// function to get coordinates
+	public Point3D getXYZ(String pos) {
+		double x = Double.parseDouble(pos.substring(0, pos.indexOf(","))); // get x coordinate
+		pos = pos.substring(pos.indexOf(",") + 1);
+		double y = Double.parseDouble(pos.substring(0, pos.indexOf(","))); // get y coordinate
+		pos = pos.substring(pos.indexOf(",") + 1);
+		double z = Double.parseDouble(pos.substring(0));// get z coordinate
+		Point3D p = new Point3D(x, y, z);
+		return p;
+
 	}
 
 	@Override
