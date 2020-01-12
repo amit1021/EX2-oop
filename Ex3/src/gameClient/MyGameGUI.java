@@ -61,17 +61,6 @@ public class MyGameGUI {
 //	}
 	}
 
-	// function to get coordinates
-	public Point3D getXYZ(String pos) {
-		double x = Double.parseDouble(pos.substring(0, pos.indexOf(","))); // get x coordinate
-		pos = pos.substring(pos.indexOf(",") + 1);
-		double y = Double.parseDouble(pos.substring(0, pos.indexOf(","))); // get y coordinate
-		pos = pos.substring(pos.indexOf(",") + 1); // get z coordinate
-		double z = Double.parseDouble(pos.substring(0));
-		Point3D p = new Point3D(x, y, z);
-		return p;
-	}
-
 	public void initFruitFromJSON(String s) {
 		try {
 			JSONObject obj_JSONObject = new JSONObject(s);
@@ -106,47 +95,15 @@ public class MyGameGUI {
 		}
 	}
 
-	public String matchFruitToEdge(Fruit f) {
-		Collection<node_data> V = g.getV();
-		for (node_data vertex : V) {
-			Collection<edge_data> edge = g.getE(vertex.getKey());
-			if (edge != null) {
-				for (edge_data e : edge) {
-					// check if the fruit on the edge and return the type of the fruit
-					double srcX = vertex.getLocation().x();
-					double srcY = vertex.getLocation().y();
-					double FruitX = f.getLocation().x();
-					double FruitY = f.getLocation().y();
-					double destX = g.getNode(e.getDest()).getLocation().x();
-					double destY = g.getNode(e.getDest()).getLocation().y();
-					double disSrc = calculateDistanceBetweenPoints(srcX, srcY, FruitX, FruitY);
-					double disDest = calculateDistanceBetweenPoints(destX, destY, FruitX, FruitY);
-					double disSrcDest = calculateDistanceBetweenPoints(srcX, srcY, destX, destY);
-					if (Math.abs(disSrcDest - (disSrc + disDest)) <= EPSILON) {
-						if (srcY < destY) {
-							return "apple.png";
-						} else {
-							return "banana.png";
-						}
-					}
-				}
-			}
-
-		}
-		return null;
-	}
-
-	public double calculateDistanceBetweenPoints(double x1, double y1, double x2, double y2) {
-		return Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
-	}
-
-	public void DrawFruits() {
-		for (int i = 0; i < this.Fruits.size(); i++) {
-			double x = this.Fruits.get(i).getLocation().x() * 2000;
-			double y = this.Fruits.get(i).getLocation().y() * 2000;
-			String fruit = matchFruitToEdge(Fruits.get(i)); // check which fruit is match
-			StdDraw.picture(x, y, fruit, 1.3, 1.3); // draw the fruit on the graph
-		}
+	// function to get coordinates
+	public Point3D getXYZ(String pos) {
+		double x = Double.parseDouble(pos.substring(0, pos.indexOf(","))); // get x coordinate
+		pos = pos.substring(pos.indexOf(",") + 1);
+		double y = Double.parseDouble(pos.substring(0, pos.indexOf(","))); // get y coordinate
+		pos = pos.substring(pos.indexOf(",") + 1); // get z coordinate
+		double z = Double.parseDouble(pos.substring(0));
+		Point3D p = new Point3D(x, y, z);
+		return p;
 	}
 
 	public void initGraph() {
@@ -155,6 +112,38 @@ public class MyGameGUI {
 		Range y = rangeY();
 		StdDraw.setXscale(x.get_min() - 5, x.get_max() + 5);
 		StdDraw.setYscale(y.get_min() - 5, y.get_max() + 5);
+	}
+
+	public Range rangeX() {
+		Collection<node_data> V = g.getV();
+		double minX = INFINITE;
+		double maxX = MINUS_INFINITE;
+		for (node_data vertex : V) {
+			if (vertex.getLocation().x() * 2000 > maxX) {
+				maxX = vertex.getLocation().x() * 2000;
+			}
+			if (vertex.getLocation().x() * 2000 < minX) {
+				minX = vertex.getLocation().x() * 2000;
+			}
+		}
+		Range x = new Range(minX, maxX);
+		return x;
+	}
+
+	public Range rangeY() {
+		Collection<node_data> V = g.getV();
+		double minY = INFINITE;
+		double MaxY = MINUS_INFINITE;
+		for (node_data vertex : V) {
+			if (vertex.getLocation().y() * 2000 > MaxY) {
+				MaxY = vertex.getLocation().y() * 2000;
+			}
+			if (vertex.getLocation().y() * 2000 < minY) {
+				minY = vertex.getLocation().y() * 2000;
+			}
+		}
+		Range y = new Range(minY, MaxY);
+		return y;
 	}
 
 	public void DrawGraph() {
@@ -211,36 +200,48 @@ public class MyGameGUI {
 		return e1;
 	}
 
-	public Range rangeX() {
-		Collection<node_data> V = g.getV();
-		double minX = INFINITE;
-		double maxX = MINUS_INFINITE;
-		for (node_data vertex : V) {
-			if (vertex.getLocation().x() * 2000 > maxX) {
-				maxX = vertex.getLocation().x() * 2000;
-			}
-			if (vertex.getLocation().x() * 2000 < minX) {
-				minX = vertex.getLocation().x() * 2000;
-			}
+	public void DrawFruits() {
+		for (int i = 0; i < this.Fruits.size(); i++) {
+			double x = this.Fruits.get(i).getLocation().x() * 2000;
+			double y = this.Fruits.get(i).getLocation().y() * 2000;
+			String fruit = matchFruitToEdge(Fruits.get(i)); // check which fruit is match
+			StdDraw.picture(x, y, fruit, 1.3, 1.3); // draw the fruit on the graph
 		}
-		Range x = new Range(minX, maxX);
-		return x;
 	}
 
-	public Range rangeY() {
+	public String matchFruitToEdge(Fruit f) {
 		Collection<node_data> V = g.getV();
-		double minY = INFINITE;
-		double MaxY = MINUS_INFINITE;
 		for (node_data vertex : V) {
-			if (vertex.getLocation().y() * 2000 > MaxY) {
-				MaxY = vertex.getLocation().y() * 2000;
+			Collection<edge_data> edge = g.getE(vertex.getKey());
+			if (edge != null) {
+				for (edge_data e : edge) {
+					// check if the fruit on the edge and return the type of the fruit
+					double srcX = vertex.getLocation().x();
+					double srcY = vertex.getLocation().y();
+					double FruitX = f.getLocation().x();
+					double FruitY = f.getLocation().y();
+					double destX = g.getNode(e.getDest()).getLocation().x();
+					double destY = g.getNode(e.getDest()).getLocation().y();
+					double disSrc = calculateDistanceBetweenPoints(srcX, srcY, FruitX, FruitY);
+					double disDest = calculateDistanceBetweenPoints(destX, destY, FruitX, FruitY);
+					double disSrcDest = calculateDistanceBetweenPoints(srcX, srcY, destX, destY);
+					if (Math.abs(disSrcDest - (disSrc + disDest)) <= EPSILON) {
+						if (srcY < destY) {
+							return "apple.png";
+						} else {
+							return "banana.png";
+						}
+					}
+				}
 			}
-			if (vertex.getLocation().y() * 2000 < minY) {
-				minY = vertex.getLocation().y() * 2000;
-			}
+
 		}
-		Range y = new Range(minY, MaxY);
-		return y;
+		return null;
+	}
+
+	// calculate distance between two points
+	public double calculateDistanceBetweenPoints(double x1, double y1, double x2, double y2) {
+		return Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
 	}
 
 	public static void main(String[] args) {
