@@ -42,4 +42,8 @@ public class Robot {
 	public Point3D getLocation() {
 		return this.location;
 	}
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> branch 'master' of https://github.com/ohadcohen1111/Ex3-oop.git

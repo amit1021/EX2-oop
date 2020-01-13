@@ -1,16 +1,10 @@
 package gameClient;
 
 import java.awt.Color;
-import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-
-import javax.swing.ImageIcon;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
-
 import Server.Game_Server;
 import Server.game_service;
 import dataStructure.DGraph;
@@ -21,7 +15,6 @@ import utils.Range;
 import utils.StdDraw;
 
 public class MyGameGUI {
-
 	private DGraph g;
 	final int INFINITE = Integer.MAX_VALUE;
 	final int MINUS_INFINITE = Integer.MIN_VALUE;
@@ -40,6 +33,7 @@ public class MyGameGUI {
 			JSONObject line = new JSONObject(info);
 			JSONObject gameOver = line.getJSONObject("GameServer");
 			int rs = gameOver.getInt("robots");
+			// JSONObject robot = line.getJSONObject("Robot");
 			System.out.println(info);
 			System.out.println(g);
 			Iterator<String> f_iter = game.getFruits().iterator();
@@ -51,15 +45,12 @@ public class MyGameGUI {
 				game.addRobot(src_node + a);
 				String robot = game.getRobots().get(a);
 				initRobotFromJSON(robot);
-
 			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 		DrawGraph();
-
 //		game.startGame();
 //		// should be a Thread!!!
 //		while (game.isRunning()) {
@@ -68,24 +59,22 @@ public class MyGameGUI {
 //		String results = game.toString();
 //		System.out.println("Game Over: " + results);
 //	}
-
 	}
 
 	public void initFruitFromJSON(String s) {
 		try {
 			JSONObject obj_JSONObject = new JSONObject(s);
 			JSONObject JSON_Fruit = obj_JSONObject.getJSONObject("Fruit");
-			String pos = JSON_Fruit.getString("pos");
-			Point3D p = getXYZ(pos);
-			double value = JSON_Fruit.getDouble("value");
-			int type = JSON_Fruit.getInt("type");
-			Fruit f = new Fruit(type, value, p);
-			Fruits.add(f);
+			String pos = JSON_Fruit.getString("pos");// Extract the coordinates to String
+			Point3D p = getXYZ(pos); // get p coordinates from getXYZ function
+			double value = JSON_Fruit.getDouble("value"); // Extract the value of the fruit
+			int type = JSON_Fruit.getInt("type"); // Extract the type of the fruit
+			Fruit f = new Fruit(type, value, p); // Add new fruit
+			Fruits.add(f); // Add the new fruit to the list
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	public void initRobotFromJSON(String s) {
@@ -105,28 +94,26 @@ public class MyGameGUI {
 			e.printStackTrace();
 		}
 	}
-	
-	// function to get coordinates
-		public Point3D getXYZ(String pos) {
-			double x = Double.parseDouble(pos.substring(0, pos.indexOf(","))); // get x coordinate
-			pos = pos.substring(pos.indexOf(",") + 1);
-			double y = Double.parseDouble(pos.substring(0, pos.indexOf(","))); // get y coordinate
-			pos = pos.substring(pos.indexOf(",") + 1);
-			double z = Double.parseDouble(pos.substring(0));// get z coordinate
-			Point3D p = new Point3D(x, y, z);
-			return p;
 
-		}
-	
+	// function to get coordinates
+	public Point3D getXYZ(String pos) {
+		double x = Double.parseDouble(pos.substring(0, pos.indexOf(","))); // get x coordinate
+		pos = pos.substring(pos.indexOf(",") + 1);
+		double y = Double.parseDouble(pos.substring(0, pos.indexOf(","))); // get y coordinate
+		pos = pos.substring(pos.indexOf(",") + 1); // get z coordinate
+		double z = Double.parseDouble(pos.substring(0));
+		Point3D p = new Point3D(x, y, z);
+		return p;
+	}
+
 	public void initGraph() {
 		StdDraw.setCanvasSize(1000, 600);
 		Range x = rangeX();
 		Range y = rangeY();
-
 		StdDraw.setXscale(x.get_min() - 5, x.get_max() + 5);
 		StdDraw.setYscale(y.get_min() - 5, y.get_max() + 5);
 	}
-	
+
 	public Range rangeX() {
 		Collection<node_data> V = g.getV();
 		double minX = INFINITE;
@@ -146,20 +133,19 @@ public class MyGameGUI {
 	public Range rangeY() {
 		Collection<node_data> V = g.getV();
 		double minY = INFINITE;
-		double maxY = MINUS_INFINITE;
+		double MaxY = MINUS_INFINITE;
 		for (node_data vertex : V) {
-			if (vertex.getLocation().y() * 2000 > maxY) {
-				maxY = vertex.getLocation().y() * 2000;
+			if (vertex.getLocation().y() * 2000 > MaxY) {
+				MaxY = vertex.getLocation().y() * 2000;
 			}
 			if (vertex.getLocation().y() * 2000 < minY) {
 				minY = vertex.getLocation().y() * 2000;
 			}
 		}
-		Range y = new Range(minY, maxY);
+		Range y = new Range(minY, MaxY);
 		return y;
 	}
-	
-	
+
 	public void DrawGraph() {
 		initGraph();
 		// edge
@@ -183,7 +169,6 @@ public class MyGameGUI {
 					double dirX = ((9 * x1) + x0) / 10;
 					double dirY = ((9 * y1) + y0) / 10;
 					StdDraw.point(dirX, dirY);
-								
 
 					// weigh
 					double w = twoDigitsAfterP(e.getWeight());
@@ -214,54 +199,89 @@ public class MyGameGUI {
 		e1 = e1 / 100;
 		return e1;
 	}
-	
 
 	public void DrawFruits() {
 		for (int i = 0; i < this.Fruits.size(); i++) {
 			double x = this.Fruits.get(i).getLocation().x() * 2000;
 			double y = this.Fruits.get(i).getLocation().y() * 2000;
-			String fruit = matchFruitToEdge(this.Fruits.get(i));
-			StdDraw.picture(x, y, fruit, 1.3, 1.3);
+			String fruit = matchFruitToEdge(Fruits.get(i)); // check which fruit is match
+			StdDraw.picture(x, y, fruit, 1.3, 1.3); // draw the fruit on the graph
 		}
 	}
-	
+
 	public String matchFruitToEdge(Fruit f) {
 		Collection<node_data> V = g.getV();
-			for (node_data vertex : V) {
-				Collection<edge_data> edge = g.getE(vertex.getKey());
-				if (edge != null) {
-					for (edge_data e : edge) {
-						// check if the fruit on the edge and return the type of the fruit
-						double srcX = vertex.getLocation().x();
-						double srcY = vertex.getLocation().y();
-						double FruitX = f.getLocation().x();
-						double FruitY = f.getLocation().y();
-						double destX = g.getNode(e.getDest()).getLocation().x();
-						double destY = g.getNode(e.getDest()).getLocation().y();
-						double disSrc = calculateDistanceBetweenPoints(srcX, srcY, FruitX, FruitY);
-						double disDest = calculateDistanceBetweenPoints(destX, destY, FruitX, FruitY);
-						double disSrcDest = calculateDistanceBetweenPoints(srcX, srcY, destX, destY);
-						if (Math.abs(disSrcDest - (disSrc + disDest)) <= EPSILON) {
-							if (srcY < destY) {
-								return "apple.png";
-							} else {
-								return "banana.png";
-							}
+		for (node_data vertex : V) {
+			Collection<edge_data> edge = g.getE(vertex.getKey());
+			if (edge != null) {
+				for (edge_data e : edge) {
+					// check if the fruit on the edge and return the type of the fruit
+					double srcX = vertex.getLocation().x();
+					double srcY = vertex.getLocation().y();
+					double FruitX = f.getLocation().x();
+					double FruitY = f.getLocation().y();
+					double destX = g.getNode(e.getDest()).getLocation().x();
+					double destY = g.getNode(e.getDest()).getLocation().y();
+					double disSrc = calculateDistanceBetweenPoints(srcX, srcY, FruitX, FruitY);
+					double disDest = calculateDistanceBetweenPoints(destX, destY, FruitX, FruitY);
+					double disSrcDest = calculateDistanceBetweenPoints(srcX, srcY, destX, destY);
+					if (Math.abs(disSrcDest - (disSrc + disDest)) <= EPSILON) {
+						if (srcY < destY) {
+							return "apple.png";
+						} else {
+							return "banana.png";
 						}
 					}
+				}
 			}
+
 		}
 		return null;
 	}
 
+	// calculate distance between two points
 	public double calculateDistanceBetweenPoints(double x1, double y1, double x2, double y2) {
 		return Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
 	}
 
-
 	public static void main(String[] args) {
-		MyGameGUI my = new MyGameGUI(16);
-		System.out.println(my);
+		MyGameGUI myg1 = new MyGameGUI(1);
+//		MyGameGUI myg2 = new MyGameGUI(2);
+//		MyGameGUI myg3 = new MyGameGUI(3);
+//		MyGameGUI myg4 = new MyGameGUI(4);
+//		MyGameGUI myg5 = new MyGameGUI(5);
+//		MyGameGUI myg6 = new MyGameGUI(6);
+//		MyGameGUI myg7 = new MyGameGUI(7);
+//		MyGameGUI myg8 = new MyGameGUI(8);
+//		MyGameGUI myg9 = new MyGameGUI(9);
+//		MyGameGUI myg10 = new MyGameGUI(10);
+//		MyGameGUI myg11 = new MyGameGUI(11);
+//		MyGameGUI myg12 = new MyGameGUI(12);
+//		MyGameGUI myg13 = new MyGameGUI(13);
+//		MyGameGUI myg14 = new MyGameGUI(14);
+//		MyGameGUI myg15 = new MyGameGUI(15);
+//		MyGameGUI myg16 = new MyGameGUI(16);
+//		MyGameGUI myg17 = new MyGameGUI(17);
+//		MyGameGUI myg18 = new MyGameGUI(18);
+
+		// myg1.drawGraph();
+//	myg2.drawGraph();
+//		myg3.drawGraph();
+		// myg4.drawGraph();
+//		myg5.drawGraph();
+//		myg6.drawGraph();
+//		myg7.drawGraph();
+		// myg8.drawGraph();
+//		myg9.drawGraph();
+//		myg10.drawGraph();
+//		myg11.drawGraph();
+		// myg12.drawGraph();
+		// myg13.drawGraph();
+//	myg14.drawGraph();
+//		myg15.drawGraph();
+		// myg16.drawGraph();
+		// myg17.drawGraph();
+		// myg18.drawGraph();
 
 	}
 }
