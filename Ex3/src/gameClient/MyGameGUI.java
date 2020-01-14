@@ -1,9 +1,11 @@
 package gameClient;
 
 import java.awt.Color;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+
 import org.json.JSONObject;
 import Server.Game_Server;
 import Server.game_service;
@@ -18,12 +20,13 @@ public class MyGameGUI {
 	private DGraph g;
 	final int INFINITE = Integer.MAX_VALUE;
 	final int MINUS_INFINITE = Integer.MIN_VALUE;
-	final double EPSILON = 0.01;
+	final double EPSILON = 0.0001;
 	private ArrayList<Fruit> Fruits = new ArrayList<Fruit>();
 	private ArrayList<Robot> Robots = new ArrayList<Robot>();
+	private game_service game;
 
 	public MyGameGUI(int scenario_num) {
-		game_service game = Game_Server.getServer(scenario_num); // you have [0,23] games
+		game = Game_Server.getServer(scenario_num); // you have [0,23] games
 		String gg = game.getGraph();
 		g = new DGraph();
 		g.initFromJSON(gg);
@@ -53,9 +56,9 @@ public class MyGameGUI {
 		DrawGraph();
 //		game.startGame();
 //		// should be a Thread!!!
-//		while (game.isRunning()) {
+		while (game.isRunning()) {
 //			moveRobots(game, gg);
-//		}
+		}
 //		String results = game.toString();
 //		System.out.println("Game Over: " + results);
 //	}
@@ -63,13 +66,7 @@ public class MyGameGUI {
 
 	public void initFruitFromJSON(String s) {
 		try {
-			JSONObject obj_JSONObject = new JSONObject(s);
-			JSONObject JSON_Fruit = obj_JSONObject.getJSONObject("Fruit");
-			String pos = JSON_Fruit.getString("pos");// Extract the coordinates to String
-			Point3D p = getXYZ(pos); // get p coordinates from getXYZ function
-			double value = JSON_Fruit.getDouble("value"); // Extract the value of the fruit
-			int type = JSON_Fruit.getInt("type"); // Extract the type of the fruit
-			Fruit f = new Fruit(type, value, p); // Add new fruit
+			Fruit f = new Fruit(s);
 			Fruits.add(f); // Add the new fruit to the list
 
 		} catch (Exception e) {
@@ -79,16 +76,7 @@ public class MyGameGUI {
 
 	public void initRobotFromJSON(String s) {
 		try {
-			JSONObject obj_JsonObject = new JSONObject(s);
-			JSONObject JSON_Robot = obj_JsonObject.getJSONObject("Robot");
-			int id = JSON_Robot.getInt("id");
-			double value = JSON_Robot.getDouble("value"); // Extract the value of the robot
-			int src = JSON_Robot.getInt("src"); // Extract the source of the robot
-			int dest = JSON_Robot.getInt("dest"); // Extract the destination of the robot
-			double speed = JSON_Robot.getDouble("speed"); // Extract the speed of the robot
-			String pos = JSON_Robot.getString("pos");// Extract the coordinates to String
-			Point3D p = getXYZ(pos); // get p coordinates from getXYZ function
-			Robot r = new Robot(id, value, src, dest, speed, p);
+			Robot r = new Robot(s);
 			Robots.add(r);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -107,7 +95,7 @@ public class MyGameGUI {
 	}
 
 	public void initGraph() {
-		StdDraw.setCanvasSize(1000, 600);
+		StdDraw.setCanvasSize(800, 400);
 		Range x = rangeX();
 		Range y = rangeY();
 		StdDraw.setXscale(x.get_min() - 5, x.get_max() + 5);
@@ -148,6 +136,7 @@ public class MyGameGUI {
 
 	public void DrawGraph() {
 		initGraph();
+	
 		// edge
 		for (node_data vertex : g.getV()) {
 			Collection<edge_data> edge = g.getE(vertex.getKey());
@@ -171,7 +160,7 @@ public class MyGameGUI {
 					StdDraw.point(dirX, dirY);
 
 					// weigh
-					double w = twoDigitsAfterP(e.getWeight());
+					double w = twoDigitsAfterPoint(e.getWeight());
 					StdDraw.setPenColor(Color.cyan);
 					double Wx = (x1 + x0) / 2;
 					double Wy = (y1 + y0) / 2;
@@ -190,10 +179,109 @@ public class MyGameGUI {
 			}
 		}
 		DrawFruits();
+		drawRobot();
+		 drawTime();
+		mouseClick();
+
+	}
+
+	public void mouseClick() {
+		StdDraw.enableDoubleBuffering();
+		while (true) {
+//		 mouse click
+			if (StdDraw.isMousePressed()) {
+				double x = StdDraw.mouseX(); // the X coordinate of the click position
+				double y = StdDraw.mouseY(); // the Y coordinate of the click position
+				Point3D dest = new Point3D(x / 2000, y / 2000, 0); // initiate new point with this coordinates
+				int robotId = getRobotId(dest); // checks whether there is a robot coming out to the clicked vertex
+				if (robotId != -1) { // if robotId is not equals -1 then such a robot exists
+					System.out.println("RES: " + robotId);
+
+				}
+			}
+			StdDraw.show();
+			StdDraw.pause(10);
+		}
+	}
+
+	public int getRobotId(Point3D pressed) {
+		Collection<node_data> V = g.getV();
+		for (node_data vertex : V) {
+			int robotId = getRobotIdHelp(vertex);// Looking for the vertex that has a robot
+			if (robotId != -1) { // if robotId is not equals -1 then such a robot exists on a vertex
+				Collection<edge_data> edge = g.getE(vertex.getKey());
+				if (edge != null) {
+					for (edge_data e : edge) {
+						// checks whether there is a robot on a vertex that connects to the clicked
+						// vertex
+						double neibX = g.getNode(e.getDest()).getLocation().x();
+						double neibY = g.getNode(e.getDest()).getLocation().y();
+						if (Math.abs(neibX - pressed.x()) <= EPSILON && Math.abs(neibY - pressed.y()) <= EPSILON) {
+//							while (true) {
+//								moveRobot(robotId, e.getDest());
+//								drawRobot();
+//								// StdDraw.show();
+//								try {
+//									Thread.sleep(10);
+//								} catch (Exception e1) {
+//								}
+							return robotId;
+						}
+					}
+				}
+			}
+		}
+		return -1;
+
+	}
+
+	public int getRobotIdHelp(node_data n) {
+		// checks whether there is a robot on the vertex
+		for (int i = 0; i < Robots.size(); i++) {
+			if (Math.abs(Robots.get(i).getLocation().x() - n.getLocation().x()) <= EPSILON
+					&& Math.abs(Robots.get(i).getLocation().y() - n.getLocation().y()) <= EPSILON) {
+				return Robots.get(i).getId();
+			}
+		}
+		return -1;
+	}
+
+//	public void moveRobot(int robotId, int dest) {
+//
+//		if (Robots.get(robotId).getLocation().x() < g.getNode(dest).getLocation().x()
+//				&& Robots.get(robotId).getLocation().y() < g.getNode(dest).getLocation().y()) {
+//			double x = Robots.get(robotId).getLocation().x();
+//			double y = Robots.get(robotId).getLocation().y();
+//			Point3D p = new Point3D(x + 0.001, y + 0.001, 0);
+//			Robots.get(robotId).setLocation(p);
+//		}
+//
+//	}
+
+	public void drawTime() {
+		//while (true) {
+			//synchronized (this) {
+				double x = 35 * 2000;
+				double y = 32 * 2000;
+				StdDraw.setPenRadius(0.015);
+				StdDraw.setPenColor(Color.black);
+				StdDraw.text(x, y, "Time: " + game.timeToEnd());
+//			}
+//		}
+
+	}
+
+	public ArrayList<Robot> cloneRobotsArray() {
+		ArrayList<Robot> clone = new ArrayList<Robot>();
+		for (int i = 0; i < this.Robots.size(); i++) {
+			Robot r = new Robot(this.Robots.get(i));
+			clone.add(r);
+		}
+		return clone;
 	}
 
 	// Display the number 2 digits after the decimal point
-	public double twoDigitsAfterP(double e) {
+	public double twoDigitsAfterPoint(double e) {
 		double e1 = e * 100;
 		e1 = (int) e1;
 		e1 = e1 / 100;
@@ -239,12 +327,50 @@ public class MyGameGUI {
 		return null;
 	}
 
+	public game_service getGame() {
+		return this.game;
+	}
+
+	public ArrayList<Fruit> getFruits() {
+		return this.Fruits;
+	}
+
+	public ArrayList<Robot> getRobots() {
+		return this.Robots;
+	}
+
+	public DGraph getDgraph() {
+		return this.g;
+	}
+
 	// calculate distance between two points
 	public double calculateDistanceBetweenPoints(double x1, double y1, double x2, double y2) {
 		return Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
 	}
 
+	public void drawRobot() {
+		for (int i = 0; i < this.Robots.size(); i++) {
+			double x = this.Robots.get(i).getLocation().x() * 2000;
+			double y = this.Robots.get(i).getLocation().y() * 2000;
+			StdDraw.setPenRadius(0.005);
+			StdDraw.setPenColor(Color.DARK_GRAY);
+			StdDraw.circle(x, y, 0.5);
+		}
+	}
+
+	public int getRobotByLocation(double x, double y) {
+		for (int i = 0; i < this.Robots.size(); i++) {
+			double robotX = this.Robots.get(i).getLocation().x();
+			double robotY = this.Robots.get(i).getLocation().y();
+			if (robotX == x && robotY == y) {
+				return this.Robots.get(i).getId();
+			}
+		}
+		return -1;
+	}
+
 	public static void main(String[] args) {
+
 		MyGameGUI myg1 = new MyGameGUI(1);
 //		MyGameGUI myg2 = new MyGameGUI(2);
 //		MyGameGUI myg3 = new MyGameGUI(3);
@@ -263,25 +389,6 @@ public class MyGameGUI {
 //		MyGameGUI myg16 = new MyGameGUI(16);
 //		MyGameGUI myg17 = new MyGameGUI(17);
 //		MyGameGUI myg18 = new MyGameGUI(18);
-
-		// myg1.drawGraph();
-//	myg2.drawGraph();
-//		myg3.drawGraph();
-		// myg4.drawGraph();
-//		myg5.drawGraph();
-//		myg6.drawGraph();
-//		myg7.drawGraph();
-		// myg8.drawGraph();
-//		myg9.drawGraph();
-//		myg10.drawGraph();
-//		myg11.drawGraph();
-		// myg12.drawGraph();
-		// myg13.drawGraph();
-//	myg14.drawGraph();
-//		myg15.drawGraph();
-		// myg16.drawGraph();
-		// myg17.drawGraph();
-		// myg18.drawGraph();
 
 	}
 }
