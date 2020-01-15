@@ -56,6 +56,30 @@ public class Robot {
 			e.printStackTrace();
 		}
 	}
+	
+	public void update(String Json) {
+		try {
+			JSONObject obj_JsonObject = new JSONObject(Json);
+			JSONObject JSON_Robot = obj_JsonObject.getJSONObject("Robot");
+			int id = JSON_Robot.getInt("id");
+			this.id = id;
+			double value = JSON_Robot.getDouble("value"); // Extract the value of the robot
+			this.value = value;
+			int src = JSON_Robot.getInt("src"); // Extract the source of the robot
+			this.src = src;
+			int dest = JSON_Robot.getInt("dest"); // Extract the destination of the robot
+			this.dest = dest;
+			double speed = JSON_Robot.getDouble("speed"); // Extract the speed of the robot
+			this.speed = speed;
+			String pos = JSON_Robot.getString("pos");// Extract the coordinates to String
+			this.location = new Point3D(pos);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		
+		
+	}
 
 	public int getId() {
 		return this.id;

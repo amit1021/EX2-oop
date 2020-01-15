@@ -31,6 +31,23 @@ public class Fruit {
 			e.printStackTrace();
 		}
 	}
+	
+	public void update(String Json) {
+		try {
+			JSONObject obj_JSONObject = new JSONObject(Json);
+			JSONObject JSON_Fruit = obj_JSONObject.getJSONObject("Fruit");
+			String pos = JSON_Fruit.getString("pos");// Extract the coordinates to String
+			this.location = new Point3D(pos);
+			double value = JSON_Fruit.getDouble("value"); // Extract the value of the fruit
+			this.value = value;
+			
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		
+	}
 
 	public int getType() {
 		return this.type;
@@ -43,4 +60,6 @@ public class Fruit {
 	public Point3D getLocation() {
 		return this.location;
 	}
+	
+	
 }
