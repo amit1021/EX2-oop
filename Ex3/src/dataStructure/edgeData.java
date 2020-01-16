@@ -17,6 +17,10 @@ public class edgeData implements edge_data, Serializable {
 		this.info = "";
 	}
 
+	public edgeData() {
+		;
+	}
+
 	public int getSrc() {
 		return this.src.getKey();
 	}

@@ -7,30 +7,30 @@ import dataStructure.DGraph;
 import dataStructure.edge_data;
 import dataStructure.node_data;
 
-
 public class InitiateGame {
-	private DGraph g ;
+	private DGraph g;
 	private ArrayList<Fruit> Fruits = new ArrayList<Fruit>();
 	private ArrayList<Robot> Robots = new ArrayList<Robot>();
 	final double EPSILON = 0.0001;
-	
+
 	public InitiateGame(String graph) {
 		initGraphFromJSON(graph);
 	}
 
-	
 	public void initGraphFromJSON(String s) {
 		g = new DGraph();
-		g.initFromJSON(s);		
+		g.initFromJSON(s);
 	}
+
 	public void initFruitFromJSON(String s) {
+	//	Fruits.clear();
 		try {
 			Fruit f = new Fruit(s);
 			Fruits.add(f); // Add the new fruit to the list
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		System.out.println(s);
 	}
 
 	public void initRobotFromJSON(String s) {
@@ -41,7 +41,8 @@ public class InitiateGame {
 			e.printStackTrace();
 		}
 	}
-	
+
+
 	public int getRobotIdHelp(node_data n) {
 		// checks whether there is a robot on the vertex
 		for (int i = 0; i < Robots.size(); i++) {
@@ -52,7 +53,7 @@ public class InitiateGame {
 		}
 		return -1;
 	}
-	
+
 	public int getRobotByLocation(double x, double y) {
 		for (int i = 0; i < this.Robots.size(); i++) {
 			double robotX = this.Robots.get(i).getLocation().x();
@@ -63,7 +64,7 @@ public class InitiateGame {
 		}
 		return -1;
 	}
-	
+
 	public String typeOfFruit(Fruit f) {
 		if (f.getType() == 1) {
 			return "apple.png";
@@ -71,8 +72,8 @@ public class InitiateGame {
 			return "banana.png";
 		}
 	}
-	
-	public String matchFruitToEdge(Fruit f) {
+
+	public edge_data matchFruitToEdge(Fruit f) {
 		Collection<node_data> V = g.getV();
 		for (node_data vertex : V) {
 			Collection<edge_data> edge = g.getE(vertex.getKey());
@@ -89,8 +90,16 @@ public class InitiateGame {
 					double disDest = calculateDistanceBetweenPoints(destX, destY, FruitX, FruitY);
 					double disSrcDest = calculateDistanceBetweenPoints(srcX, srcY, destX, destY);
 					if (Math.abs(disSrcDest - (disSrc + disDest)) <= EPSILON) {
-						// if (srcY < destY) {
-
+						if (f.getType() == 1) {
+							if (srcY < destY) {
+								return e;
+							}
+						}
+						if (f.getType() == -1) {
+							if (srcY > destY) {
+								return e;
+							}
+						}
 					}
 				}
 
@@ -98,13 +107,12 @@ public class InitiateGame {
 		}
 		return null;
 	}
-	
-	// calculate distance between two points
-		public double calculateDistanceBetweenPoints(double x1, double y1, double x2, double y2) {
-			return Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
-		}
 
-	
+	// calculate distance between two points
+	public double calculateDistanceBetweenPoints(double x1, double y1, double x2, double y2) {
+		return Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
+	}
+
 	public ArrayList<Fruit> Fruits() {
 		return this.Fruits;
 	}
@@ -116,6 +124,5 @@ public class InitiateGame {
 	public DGraph graph() {
 		return this.g;
 	}
-	
-	
+
 }
