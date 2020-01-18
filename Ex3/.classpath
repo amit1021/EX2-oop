@@ -7,7 +7,7 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="lib/java-json.jar"/>
-	<classpathentry kind="lib" path="lib/GameServer_v0.27.jar" sourcepath="lib/GameServer_v0.27.jar"/>
+	<classpathentry kind="lib" path="lib/GameServer_v0.27.jar" sourcepath="C:/Users/Ohad/Desktop/שולחן עבודה/לימודים/מונחה עצמים/Ex3_v2/Ex3_v2/lib/GameServer_v0.27.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Ohad/Downloads/json-simple-1.1.jar/json-simple-1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

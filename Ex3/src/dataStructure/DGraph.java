@@ -16,7 +16,6 @@ public class DGraph implements graph, Serializable {
 	private HashMap<Integer, HashMap<Integer, edge_data>> Neib;
 	private int mc;
 
-
 	public DGraph() {
 		this.Vertex = new HashMap<Integer, node_data>();
 		this.Neib = new HashMap<Integer, HashMap<Integer, edge_data>>();
