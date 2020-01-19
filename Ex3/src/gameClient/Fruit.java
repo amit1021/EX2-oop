@@ -16,6 +16,16 @@ public class Fruit {
 		this.value = value;
 		this.location = location;
 	}
+	// empty constructor
+	public Fruit() {
+		;
+	}
+	// copy constructor
+	public Fruit(Fruit f) { 
+		this.type = f.type;
+		this.value = f.value;
+		this.location = f.location;
+	}
 
 	public Fruit(String s) {
 		try {
@@ -32,6 +42,7 @@ public class Fruit {
 			e.printStackTrace();
 		}
 	}
+
 
 	public void update(String Json) {
 

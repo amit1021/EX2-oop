@@ -1,16 +1,20 @@
 package gameClient;
 
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.Menu;
 import java.awt.MenuBar;
+import java.awt.MenuItem;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -26,11 +30,12 @@ import dataStructure.edgeData;
 import dataStructure.edge_data;
 import dataStructure.graph;
 import dataStructure.node_data;
+import oop_dataStructure.oop_graph;
 import utils.Point3D;
 import utils.Range;
 import utils.StdDraw;
 
-public class MyGameGUI implements ActionListener, MouseListener, Runnable {
+public class MyGameGUI extends JFrame implements ActionListener, MouseListener {
 
 	final double EPSILON = 0.0001;
 	final int INFINITE = Integer.MAX_VALUE;
@@ -38,13 +43,14 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 	private game_service game;
 	private InitiateGame gameGraph;
 	private AutomaticGame auto;
+	private int numOfRobots = 0;
+	private int robotsOnGraph = 0;
 
 	public MyGameGUI() {
-		;
+		optionGame();
 	}
 
-	public void startGame(int scenario_num) {
-
+	public void startGameAuto(int scenario_num) {
 		game = Game_Server.getServer(scenario_num); // you have [0,23] games
 		String graph = game.getGraph();
 		gameGraph = new InitiateGame(graph);
@@ -54,50 +60,123 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 			JSONObject gameOver = line.getJSONObject("GameServer");
 			System.out.println(info);
 			Iterator<String> f_iter = game.getFruits().iterator();
-			while (f_iter.hasNext()) {
+			while (f_iter.hasNext()) { // init fruit
 				gameGraph.initFruitFromJSON(f_iter.next());
 			}
-			initRobot(gameOver);
+			numOfRobots = getNumOfRobots(gameOver);
+			initRobot();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 		placeRobot();
 		initGraph();
 		DrawGraph();
 		DrawFruits();
 		DrawRobot();
 		game.startGame();
-		run();
+		runAuto();
+
 	}
 
-	private void initRobot(JSONObject Json) {
+	public void startGameManual(int scenario_num) {
+		game = Game_Server.getServer(scenario_num); // you have [0,23] games
+		String graph = game.getGraph();
+		gameGraph = new InitiateGame(graph);
 		try {
-			int rs = Json.getInt("robots");
-			for (int a = 0; a < rs; a++) {
-				robots().add(new Robot(a));
+			String info = game.toString();
+			JSONObject line = new JSONObject(info);
+			JSONObject gameOver = line.getJSONObject("GameServer");
+			System.out.println(info);
+			Iterator<String> f_iter = game.getFruits().iterator();
+			while (f_iter.hasNext()) { // init fruit
+				gameGraph.initFruitFromJSON(f_iter.next());
 			}
+			numOfRobots = getNumOfRobots(gameOver);
+			initRobot();
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		initGraph();
+		DrawGraph();
+		DrawFruits();
+		StdDraw.show();
+		int numberRobots = numOfRobots;
+		while (numberRobots > 0) {
+			String place = JOptionPane.showInputDialog("Please select a vertex that does not have a robot ");
+			try {
+				int ver = Integer.parseInt(place);
+				if (!existsRobot(ver)) {
+					placeRobotManual(ver);
+					node_data n = gameGraph.graph().getNode(ver);
+					if (n != null) {
+						numberRobots--;
+					}
+				}
+			} catch (Exception e) {
+				throw new RuntimeException("Please enter an number and existing vertex");
+			}
+		}
+		game.startGame();
+		runManual();
 	}
 
-//	private void initGame() {
-//		StdDraw.setCanvasSize(1100, 900);
-//		StdDraw.setJMenuBar(MenueBar());
-//		StdDraw.addMouseListener(this);
-//		StdDraw.enableDoubleBuffering();
-//	}
+	public void initGraph() {
+		StdDraw.setCanvasSize(1100, 600);
+		Range x = rangeX();
+		Range y = rangeY();
+		StdDraw.setXscale(x.get_min() - 5, x.get_max() + 5);
+		StdDraw.setYscale(y.get_min() - 5, y.get_max() + 5);
+		DrawGraph();
+		DrawFruits();
+		// DrawRobot();
+		StdDraw.show();
+	}
 
-//	private JMenuBar MenueBar() {
-//		JMenuBar menu = new JMenuBar();
-//		JMenu game = new JMenu("Game");
-//		menu.add(game);
-//		JMenuItem scenario = new JMenuItem("Choose scenario");
-//		scenario.addActionListener(this);
-//		game.add(scenario);
-//		return menu;
-//	}
+	private void initRobot() {
+		for (int a = 0; a < numOfRobots; a++) {
+			robots().add(new Robot(a));
+		}
+	}
+
+	private void optionGame() {
+		int scenario_num = -1;
+		String scenario_str = JOptionPane.showInputDialog("Please select a scenario from 0 to 23"); // window to select
+																									// a scenario
+		try {
+			scenario_num = Integer.parseInt(scenario_str);
+
+		} catch (Exception e) {
+			throw new RuntimeException("the scenario need to be from 0 to 23");
+
+		}
+		String[] Game = { "Manually Game", "Automatic Game" };
+		Object typeOfGame = JOptionPane.showInputDialog(null, "Please select a game type", "Game",
+				JOptionPane.INFORMATION_MESSAGE, null, Game, Game[0]);
+		if (typeOfGame == "Automatic Game") {
+			StdDraw.clear();
+			StdDraw.enableDoubleBuffering();
+			startGameAuto(scenario_num);
+		} else {
+			StdDraw.clear();
+			StdDraw.enableDoubleBuffering();
+			startGameManual(scenario_num);
+		}
+
+	}
+
+	// return the number of the robots in the game
+	public int getNumOfRobots(JSONObject Json) {
+		try {
+			int numOfRobots = Json.getInt("robots");
+			return numOfRobots;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return -1;
+	}
 
 	// Position the robot in the optimal place
 	public void placeRobot() {
@@ -122,7 +201,6 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 			if (gameGraph.Fruits().get(i).getvValue() > maxValue) {
 				// the edge of the fruit with the greatest value
 				edge_data e1 = gameGraph.matchFruitToEdge(gameGraph.Fruits().get(i));
-				// Point3D checkExistsRobot = getSrcLocationByEdge(e1);
 				if (!existsRobot(e1.getSrc())) { // Check if a robot already exists there
 					maxValue = gameGraph.Fruits().get(i).getvValue();
 					Fruit fruit = gameGraph.Fruits().get(i);
@@ -133,6 +211,7 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 		return e;
 	}
 
+	// Checks if there is a robot on the vertex
 	public boolean existsRobot(int src) {
 		for (Robot r : robots()) {
 			if (r.getSrc() == src) {
@@ -140,109 +219,6 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 			}
 		}
 		return false;
-	}
-
-	// Returns the source of the edge to position the robot
-	public Point3D getSrcLocationByEdge(edge_data e) {
-		double x = gameGraph.graph().getNode(e.getSrc()).getLocation().x();
-		double y = gameGraph.graph().getNode(e.getSrc()).getLocation().y();
-		Point3D src = new Point3D(x, y);
-		return src;
-	}
-
-//	// Checks whether a robot exists at the point
-//	public boolean existsRobot(Point3D p) {
-//		for (int i = 0; i < gameGraph.Robots().size(); i++) {
-//			double currentRobotX = gameGraph.Robots().get(i).getLocation().x();
-//			double currentRobotY = gameGraph.Robots().get(i).getLocation().y();
-//			if (currentRobotX == p.x() && currentRobotY == p.y()) {
-//				return true;
-//			}
-//		}
-//		return false;
-//	}
-
-	public void initGraph() {
-		StdDraw.setCanvasSize(1100, 900);
-		// StdDraw.enableDoubleBuffering();
-		Range x = rangeX();
-		Range y = rangeY();
-		// StdDraw.clear();
-		StdDraw.setXscale(x.get_min() - 5, x.get_max() + 5);
-		StdDraw.setYscale(y.get_min() - 5, y.get_max() + 5);
-		DrawGraph();
-		DrawFruits();
-		DrawRobot();
-		StdDraw.show();
-	}
-
-	public void DrawGraph() {
-		StdDraw.clear();
-		StdDraw.enableDoubleBuffering();
-		// edge
-		for (node_data vertex : gameGraph.graph().getV()) {
-			Collection<edge_data> edge = gameGraph.graph().getE(vertex.getKey());
-			if (edge != null) {
-				for (edge_data e : edge) {
-					double x0 = gameGraph.graph().getNode(e.getSrc()).getLocation().x() * 2000;
-					double y0 = gameGraph.graph().getNode(e.getSrc()).getLocation().y() * 2000;
-					double x1 = gameGraph.graph().getNode(e.getDest()).getLocation().x() * 2000;
-					double y1 = gameGraph.graph().getNode(e.getDest()).getLocation().y() * 2000;
-
-					// edge
-					StdDraw.setPenRadius(0.005);
-					StdDraw.setPenColor(StdDraw.BOOK_LIGHT_BLUE);
-					StdDraw.line(x0, y0, x1, y1);
-
-					// Direction
-					StdDraw.setPenRadius(0.015);
-					StdDraw.setPenColor(StdDraw.YELLOW);
-					double dirX = ((9 * x1) + x0) / 10;
-					double dirY = ((9 * y1) + y0) / 10;
-					StdDraw.point(dirX, dirY);
-
-					// weigh
-					double w = twoDigitsAfterPoint(e.getWeight());
-					StdDraw.setPenColor(Color.cyan);
-					double Wx = (x0 + 2 * x1) / 3;
-					double Wy =  (y0 + 2 * y1) / 3 ;
-					String w1 = "" + w;
-					StdDraw.text(Wx, Wy + 0.5, w1);
-					
-
-					// vertex
-					StdDraw.setPenColor(Color.BLACK);
-					StdDraw.point(x0, y0);
-					String point = "";
-					point += vertex.getKey();
-					StdDraw.setPenRadius(0.02);
-					StdDraw.setPenColor(StdDraw.PRINCETON_ORANGE);
-					StdDraw.text(x0, y0 + 0.5, point); // the number of the vertex.
-				}
-			}
-		}
-		//StdDraw.show();
-
-	}
-
-	public int mouseClick() {
-		StdDraw.enableDoubleBuffering();
-		while (true) {
-//		 mouse click
-			if (StdDraw.isMousePressed()) {
-				double x = StdDraw.mouseX(); // the X coordinate of the click position
-				double y = StdDraw.mouseY(); // the Y coordinate of the click position
-				Point3D dest = new Point3D(x / 2000, y / 2000, 0); // initiate new point with this coordinates
-				int robotId = getRobotId(dest); // checks whether there is a robot coming out to the clicked vertex
-				if (robotId != -1) { // if robotId is not equals -1 then such a robot exists
-					System.out.println("RES: " + robotId);
-					return getNodeId(dest);
-
-				}
-			}
-			StdDraw.show();
-			StdDraw.pause(10);
-		}
 	}
 
 	public int getRobotId(Point3D pressed) {
@@ -268,6 +244,7 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 
 	}
 
+	/** set scales **/
 	public Range rangeX() {
 		Collection<node_data> V = gameGraph.graph().getV();
 		double minX = INFINITE;
@@ -298,72 +275,6 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 		}
 		Range y = new Range(minY, MaxY);
 		return y;
-	}
-
-//	public void drawTime() {
-//		// while (true) {
-//		// synchronized (this) {
-//		double x = 35 * 2000;
-//		double y = 32 * 2000;
-//		StdDraw.setPenRadius(0.015);
-//		StdDraw.setPenColor(Color.black);
-//		StdDraw.text(x, y, "Time: " + game.timeToEnd());
-////			}
-////		}
-//
-//	}
-
-	public ArrayList<Robot> cloneRobotsArray() {
-		ArrayList<Robot> clone = new ArrayList<Robot>();
-		for (int i = 0; i < gameGraph.Robots().size(); i++) {
-			Robot r = new Robot(gameGraph.Robots().get(i));
-			clone.add(r);
-		}
-		return clone;
-	}
-
-	// Display the number 2 digits after the decimal point
-	public double twoDigitsAfterPoint(double e) {
-		double e1 = e * 100;
-		e1 = (int) e1;
-		e1 = e1 / 100;
-		return e1;
-	}
-
-	/*
-	 * public void DrawFruits() { for (int i = 0; i < gameGraph.Fruits().size();
-	 * i++) { double x = gameGraph.Fruits().get(i).getLocation().x() * 2000; double
-	 * y = gameGraph.Fruits().get(i).getLocation().y() * 2000; String fruit =
-	 * gameGraph.typeOfFruit(gameGraph.Fruits().get(i)); // check which fruit is
-	 * match StdDraw.picture(x, y, fruit, 1.3, 1.3); // draw the fruit on the graph
-	 * } }
-	 */
-
-	private void DrawFruits() { // in scenario 17 there is apple on banana and we cannot see the banana!
-		//StdDraw.clear();
-		StdDraw.enableDoubleBuffering();
-		for (Fruit fruit : fruit()) {
-			double x = fruit.getLocation().x() * 2000;
-			double y = fruit.getLocation().y() * 2000;
-			String fruitS = gameGraph.typeOfFruit(fruit);
-			StdDraw.point(x, y);
-			StdDraw.picture(x, y, fruitS, 1.3, 1.3);
-			//StdDraw.show();
-
-		}
-	}
-
-	private void DrawRobot() {
-		StdDraw.enableDoubleBuffering();
-		for (int a = 0; a < game.getRobots().size(); a++) {
-			double x = robots().get(a).getLocation().x() * 2000;
-			double y = robots().get(a).getLocation().y() * 2000;
-			StdDraw.setPenRadius(0.005);
-			StdDraw.setPenColor(Color.DARK_GRAY);
-			StdDraw.circle(x, y, 0.5);
-			//StdDraw.show();
-
-		}
 	}
 
 	public void updateRobots(List<String> r) {
@@ -412,75 +323,147 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 		return -1;
 	}
 
-	private int nextNode(DGraph g, int src) {
-		int ans = -1;
-		Collection<edge_data> ee = g.getE(src);
-		Iterator<edge_data> itr = ee.iterator();
-		int s = ee.size();
-		int r = mouseClick();
-		ans = r;
-		return ans;
-	}
+	/** Automatic Game **/
+//	private void moveRobot(game_service game, graph graph) {
+//		List<String> log = game.move();
+//		if (log != null) {
+//			long t = game.timeToEnd();
+//			for (int i = 0; i < log.size(); i++) {
+//				String robot_json = log.get(i);
+//				try {
+//					JSONObject line = new JSONObject(robot_json);
+//					JSONObject ttt = line.getJSONObject("Robot");
+//					int rid = ttt.getInt("id");
+//					int src = ttt.getInt("src");
+//					int dest = ttt.getInt("dest");
+//					Graph_Algo ga = new Graph_Algo();
+//					ga.init(graph);
+//					
+//					if (dest == -1) { // the robot need a new fruit to eat
+//						edge_data fruitEdge = cloestFruit(ga, src); 
+//						getRobot(rid).setEdge(fruitEdge);
+//						List<node_data> shortPathCur;
+//						shortPathCur = ga.shortestPath(src, fruitEdge.getSrc()); // take the path between the robot and the fruit
+//						getRobot(rid).setShortPath(shortPathCur); //update the robot short path list.			
+//					
+//						if (getRobot(rid).getShortPath().isEmpty()) {
+//							if (src == fruitEdge.getSrc()) {//if the robot location is the same to the source of the fruit Edge 
+//								game.chooseNextEdge(rid, fruitEdge.getDest());
+//								System.out.println(
+//										"Turn to node: " + fruitEdge.getDest() + "  time to end:" + (t / 1000));
+//								System.out.println("empty list one step");
+//						}else {
+//							game.chooseNextEdge(rid,shortPathCur.get(0).getKey());
+//							System.out.println(
+//									"Turn to node: " + fruitEdge.getDest() + "  time to end:" + (t / 1000));
+//							getRobot(rid).setDest(shortPathCur.get(0).getKey());
+//							System.out.println("first steps");
+//						}
+//						
+//						
+//					}
+//					}
+//						if (!getRobot(rid).getShortPath().isEmpty()) { // if the list not empty the robot on the way to fruit.
+//							edge_data fruitEdge =  getRobot(rid).getEdge();
+//							if (src == fruitEdge.getSrc()) {//if the robot location is the same to the source of the fruit Edge 
+//								game.chooseNextEdge(rid, fruitEdge.getDest()); 
+//								System.out.println("Turn to node: " + fruitEdge.getDest() + "  time to end:" + (t / 1000));
+//								System.out.println("final stap");
+//							} else {
+//								System.out.println("not final ");
+//								game.chooseNextEdge(rid, getRobot(rid).getShortPath().get(0).getKey());
+//								getRobot(rid).setDest(getRobot(rid).getShortPath().get(0).getKey());
+//								//System.out.println(shortPathCur.get(0).getKey());
+//								getRobot(rid).getShortPath().remove(0);
+////								if (src == fruitEdge.getDest() && getRobot(rid).getShortPath() != null) {
+////									getRobot(rid).getShortPath().remove(0);
+////								}
+//								System.out.println("Turn to node: " + fruitEdge.getDest() + " time to end:" + (t / 1000));
+//							}
+//
+//						}
+//					}
+////					}else {
+////							//if (src == fruitEdge.getSrc()) {//if the robot location is the same to the source of the fruit Edge 
+////								game.chooseNextEdge(rid, fruitEdge.getDest());
+////								System.out.println(
+////										"Turn to node: " + fruitEdge.getDest() + "  time to end:" + (t / 1000));
+////								System.out.println("empty list one step");
+//////							} else {
+//////								game.chooseNextEdge(rid, getRobot(rid).getShortPath().get(0).getKey());
+//////								System.out.println("Turn to node: " + getRobot(rid).getShortPath().get(0).getKey() + "  time to end:" + (t / 1000));
+//////								System.out.println("bbb");
+//////								if (src == fruitEdge.getDest()) {
+//////									getRobot(rid).setDest(-1);
+//////								}
+////////							getRobot(rid).setDest(getRobot(rid).getShortPath().get(0).getKey());
+//////							if (src == fruitEdge.getDest()) {
+//////								getRobot(rid).getShortPath().remove(0);
+//////							}
+////							}
+//
+//			 catch (JSONException e) {
+//					e.printStackTrace();
+//				}
+//		}}
+//	}
 
-	public InitiateGame gameGraph() {
-		return gameGraph;
-	}
-
-	public game_service game() {
-		return game;
-	}
-
-	public ArrayList<Robot> robots() {
-		return gameGraph.Robots();
-	}
-
-	public ArrayList<Fruit> fruit() {
-		return gameGraph.Fruits();
-	}
-
-	public int shortestPathDistBetweenFruits(Fruit fruit) {
-		Graph_Algo ga = new Graph_Algo();
-		ga.init(gameGraph.graph());
-		Robot rob = new Robot();
-		ArrayList<node_data> minPath = new ArrayList();
-		edge_data e = gameGraph().matchFruitToEdge(fruit);
-		double minPathDist = INFINITE;
-		for (Robot robot : robots()) {
-			double currPathDist = ga.shortestPathDist(robot.getSrc(), e.getSrc());
-			double FruitEdgeWeight = e.getWeight();
-			double ratio = (currPathDist + FruitEdgeWeight) / robot.getSpeed();
-			if (ratio < minPathDist) {
-				minPathDist = ratio;
-				minPath = (ArrayList<node_data>) ga.shortestPath(robot.getSrc(), e.getSrc());
-				rob = robot;
+	private void moveRobot(game_service game, graph graph) {
+		List<String> log = game.move();
+		if (log != null) {
+			long t = game.timeToEnd();
+			for (int i = 0; i < log.size(); i++) {
+				String robot_json = log.get(i);
+				try {
+					JSONObject line = new JSONObject(robot_json);
+					JSONObject ttt = line.getJSONObject("Robot");
+					int rid = ttt.getInt("id");
+					int src = ttt.getInt("src");
+					int dest = ttt.getInt("dest");
+					Graph_Algo ga = new Graph_Algo();
+					ga.init(graph);
+					if (dest == -1) {
+						List<node_data> shortList = getRobot(rid).getShortPath();
+						edge_data fruitEdge = cloestFruit(ga, src);
+						if (src == fruitEdge.getSrc()) { // if the robot position and the source of the fruit edge are
+															// the same
+							game.chooseNextEdge(rid, fruitEdge.getDest());
+							System.out.println("1");
+							System.out.println("Turn to node: " + fruitEdge.getDest() + "  time to end:" + (t / 1000));
+						} else {
+							if (!getRobot(rid).getShortPath().isEmpty()) { // the robot not get yet to the fruit
+								dest = getRobot(rid).getShortPath().get(0).getKey();
+								game.chooseNextEdge(rid, dest);
+								System.out.println("Turn to node: " + dest + "  time to end:" + (t / 1000));
+								System.out.println("2");
+								getRobot(rid).getShortPath().remove(0);
+							} else { // the robot reach to the fruit or the fruit edge dest equals to src of the
+										// robot
+								if (src == fruitEdge.getDest()) { // the robot need to get to his src
+									game.chooseNextEdge(rid, fruitEdge.getSrc());
+									// getRobot(rid).getShortPath().add(gameGraph().graph().getNode(fruitEdge.getDest()));
+									System.out.println("3");
+									System.out.println(
+											"Turn to node: " + fruitEdge.getSrc() + "  time to end:" + (t / 1000));
+								} else { // the robot need new fruit to get
+									shortList = ga.shortestPath(src, fruitEdge.getDest());
+									getRobot(rid).setShortPath(shortList);
+									dest = getRobot(rid).getShortPath().get(0).getKey();
+									game.chooseNextEdge(rid, dest);
+									System.out.println("4");
+									System.out.println("Turn to node: " + dest + "  time to end:" + (t / 1000));
+									getRobot(rid).getShortPath().remove(0);
+								}
+							}
+						}
+					}
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
 			}
 		}
-		if (rob.getSrc() == e.getSrc()) {
-			return e.getDest();
-//			this.game().chooseNextEdge(rob.getId(), e.getDest());
-		} else {
-			fruit.setExists(false);
-//			this.game().chooseNextEdge(rob.getId(), minPath.get(0).getKey());
-			return minPath.get(0).getKey();
-			// rob.setDest(minPath.get(0).getKey());
-			// game.addRobot(rob.getId());
-
-		}
 	}
 
-//	private void moveRobot(game_service gameM, DGraph graph) {
-//		List<String> log = gameM.move();
-//		if (log != null) {
-//			updateFruits();
-//			updateRobots(log);
-//			sortFruits();
-//			for (Fruit fruit : fruit()) {
-//				if (fruit.getExists()) {
-//					shortestPathDistBetweenFruits(fruit);
-//				}
-//			}
-//		}
-//	}
 	private edge_data cloestFruit(Graph_Algo ga, int robotSrc) {
 		edge_data fruitEdge = new edgeData();
 		double shortestPath = INFINITE;
@@ -507,7 +490,200 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 		}
 	}
 
-	private void moveRobot(game_service game, graph graph) {
+	public void sortFruits() {
+		Comperator c = new Comperator();
+		gameGraph.Fruits().sort(c);
+	}
+
+	public void runAuto() {
+		while (this.game.isRunning()) {
+			updateRobots(game.move());
+			moveRobot(this.game, gameGraph.graph());
+			updateFruits();
+			this.DrawGraph();
+			this.DrawRobot();
+			this.DrawFruits();
+			this.drawGradeTime();
+			StdDraw.show();
+			try {
+				sleep(80);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		System.out.println("Game over " + this.game.toString());
+	}
+
+	/** Draw function **/
+	// Draw graph
+	public void DrawGraph() {
+		StdDraw.clear();
+		StdDraw.enableDoubleBuffering();
+		// edge
+		for (node_data vertex : gameGraph.graph().getV()) {
+			Collection<edge_data> edge = gameGraph.graph().getE(vertex.getKey());
+			if (edge != null) {
+				for (edge_data e : edge) {
+					double x0 = gameGraph.graph().getNode(e.getSrc()).getLocation().x() * 2000;
+					double y0 = gameGraph.graph().getNode(e.getSrc()).getLocation().y() * 2000;
+					double x1 = gameGraph.graph().getNode(e.getDest()).getLocation().x() * 2000;
+					double y1 = gameGraph.graph().getNode(e.getDest()).getLocation().y() * 2000;
+
+					// edge
+					StdDraw.setPenRadius(0.005);
+					StdDraw.setPenColor(StdDraw.BOOK_LIGHT_BLUE);
+					StdDraw.line(x0, y0, x1, y1);
+
+					// Direction
+					StdDraw.setPenRadius(0.015);
+					StdDraw.setPenColor(StdDraw.YELLOW);
+					double dirX = ((9 * x1) + x0) / 10;
+					double dirY = ((9 * y1) + y0) / 10;
+					StdDraw.point(dirX, dirY);
+
+					Font font = new Font("BN anna", Font.BOLD, 15);
+					StdDraw.setFont(font);
+					// weigh
+					double w = twoDigitsAfterPoint(e.getWeight());
+					StdDraw.setPenColor(Color.cyan);
+					double Wx = (x0 + 2 * x1) / 3;
+					double Wy = (y0 + 2 * y1) / 3;
+					String w1 = "" + w;
+					StdDraw.text(Wx, Wy + 0.5, w1);
+
+					Font font1 = new Font("BN anna", Font.BOLD, 15);
+					StdDraw.setFont(font1);
+					// vertex
+					StdDraw.setPenColor(Color.BLACK);
+					StdDraw.point(x0, y0);
+					String point = "";
+					point += vertex.getKey();
+					StdDraw.setPenRadius(0.02);
+					StdDraw.setPenColor(StdDraw.PRINCETON_ORANGE);
+					StdDraw.text(x0, y0 + 0.5, point); // the number of the vertex.
+
+					Font font2 = new Font("BN anna", Font.BOLD, 20);
+					StdDraw.setFont(font2);
+				}
+			}
+		}
+	}
+
+	// Draw fruits
+	private void DrawFruits() {
+		// StdDraw.clear();
+		StdDraw.enableDoubleBuffering();
+		for (Fruit fruit : fruit()) {
+			// set the position of the friut
+			double x = fruit.getLocation().x() * 2000;
+			double y = fruit.getLocation().y() * 2000;
+			// set the type of the friut
+			String fruitS = gameGraph.typeOfFruit(fruit);
+			// draw robot
+			StdDraw.picture(x, y, fruitS, 1.3, 1.3);
+		}
+	}
+
+	// Draw robots
+	private void DrawRobot() {
+		StdDraw.enableDoubleBuffering();
+		for (int a = 0; a < game.getRobots().size(); a++) {
+			// set the position of the robot
+			double x = robots().get(a).getLocation().x() * 2000;
+			double y = robots().get(a).getLocation().y() * 2000;
+			// set pen
+			StdDraw.setPenRadius(0.005);
+			StdDraw.setPenColor(Color.DARK_GRAY);
+			// draw robot
+			StdDraw.circle(x, y, 0.5);
+
+		}
+	}
+
+	// Display the number 2 digits after the decimal point
+	public double twoDigitsAfterPoint(double e) {
+		double e1 = e * 100;
+		e1 = (int) e1;
+		e1 = e1 / 100;
+		return e1;
+	}
+
+	// Draw the grade and the time
+	public void drawGradeTime() {
+		int grade = 0;
+		try {
+			JSONObject gameServer = new JSONObject(game.toString()).getJSONObject("GameServer"); // the grade from the
+																									// game
+			grade = gameServer.getInt("grade");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		int timeToEnd = (int) game.timeToEnd() / 1000; // time to end
+		// set the position of the text
+		double x = rangeX().get_min() + rangeX().get_length() / 2;
+		double y = rangeY().get_max() + rangeY().get_length() / 10;
+		// set pen
+		Font font = new Font("BN anna", Font.BOLD, 20);
+		StdDraw.setFont(font);
+		StdDraw.setPenColor(Color.PINK);
+		// draw text
+		StdDraw.text(x, +y, "{ Grade: " + grade + ",  Time left :" + timeToEnd + "  }");
+	}
+
+	/** Get/Set function **/
+
+	public InitiateGame gameGraph() {
+		return gameGraph;
+	}
+
+	public game_service game() {
+		return game;
+	}
+
+	public ArrayList<Robot> robots() {
+		return gameGraph.Robots();
+	}
+
+	public ArrayList<Fruit> fruit() {
+		return gameGraph.Fruits();
+	}
+
+	/** manual game */
+
+	public int mouseClick() {
+		double x = StdDraw.mouseX(); // the X coordinate of the click position
+		double y = StdDraw.mouseY(); // the Y coordinate of the click position
+		Point3D dest = new Point3D(x / 2000, y / 2000, 0); // initiate new point with this coordinates
+		int robotId = getRobotId(dest); // checks whether there is a robot coming out to the clicked vertex
+		if (robotId != -1) { // if robotId is not equals -1 then such a robot exists
+			return getNodeId(dest);
+		}
+		return -1;
+	}
+
+	public void placeRobotManual(int node) {
+		node_data n = gameGraph.graph().getNode(node);
+		if (n != null) {
+			// add all the robot to the game.
+			game.addRobot(n.getKey());
+			updateRobots(game.getRobots());
+			robotsOnGraph++;
+			DrawRobot();
+			StdDraw.show();
+		}
+	}
+
+	public node_data getVertexByLocation(double x, double y) {
+		for (node_data ver : gameGraph.graph().getV()) {
+			if (Math.abs(ver.getLocation().x() - x) <= EPSILON
+					&& Math.abs(Math.abs(ver.getLocation().y() - y)) <= EPSILON) { // check if the location is the same
+				return ver;
+			}
+		}
+		return null;
+	}
+
+	private void moveRobotsManual(game_service game, graph gg) {
 		List<String> log = game.move();
 		if (log != null) {
 			long t = game.timeToEnd();
@@ -519,51 +695,11 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 					int rid = ttt.getInt("id");
 					int src = ttt.getInt("src");
 					int dest = ttt.getInt("dest");
-					Graph_Algo ga = new Graph_Algo();
-					ga.init(graph);
-					edge_data fruitEdge = cloestFruit(ga, src);
-					if (dest == -1) {
-						List<node_data> shortPathCur;
-						shortPathCur = ga.shortestPath(src, fruitEdge.getSrc());
-						getRobot(rid).setShortPath(shortPathCur);
-						if (!getRobot(rid).getShortPath().isEmpty()) {
-							if (src == fruitEdge.getSrc()) {
-								game.chooseNextEdge(rid, fruitEdge.getDest());
-								System.out.println(
-										"Turn to node: " + fruitEdge.getDest() + "  time to end:" + (t / 1000));
-								if (src == fruitEdge.getDest()) {
-									getRobot(rid).getShortPath().remove(0);
-								}
-								System.out.println("asaadadf");
-							} else {
-								System.out.println("qqqq");
-								game.chooseNextEdge(rid, getRobot(rid).getShortPath().get(0).getKey());
-								getRobot(rid).setDest(getRobot(rid).getShortPath().get(0).getKey());
-//								if (src == fruitEdge.getDest() && getRobot(rid).getShortPath() != null) {
-//									getRobot(rid).getShortPath().remove(0);
-//								}
-								System.out
-										.println("Turn to node: " + fruitEdge.getDest() + " time to end:" + (t / 1000));
-							}
 
-						} else {
-							if (src == fruitEdge.getSrc()) {
-								game.chooseNextEdge(rid, fruitEdge.getDest());
-								System.out.println("Turn to node: " + fruitEdge.getDest() + "  time to end:" + (t / 1000));
-								System.out.println("aaa");
-							} else {
-								game.chooseNextEdge(rid, fruitEdge.getDest());
-								System.out.println("Turn to node: " + dest + "  time to end:" + (t / 1000));
-								System.out.println("bbb");
-								if (src == fruitEdge.getDest()) {
-									getRobot(rid).setDest(-1);
-								}
-//							getRobot(rid).setDest(getRobot(rid).getShortPath().get(0).getKey());
-//							if (src == fruitEdge.getDest()) {
-//								getRobot(rid).getShortPath().remove(0);
-//							}
-							}
-
+					if (StdDraw.isMousePressed()) {
+						int dest1 = mouseClick();
+						if (dest1 != -1) {
+							game.chooseNextEdge(rid, dest1);
 						}
 					}
 				} catch (JSONException e) {
@@ -573,22 +709,15 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 		}
 	}
 
-	public void sortFruits() {
-		Comperator c = new Comperator();
-		gameGraph.Fruits().sort(c);
-	}
-
-	
-	public void run() {
+	public void runManual() {
 		while (this.game.isRunning()) {
-			updateFruits();
 			updateRobots(game.move());
-			moveRobot(this.game, gameGraph.graph());
+			moveRobotsManual(this.game, gameGraph.graph());
+			updateFruits();
 			this.DrawGraph();
 			this.DrawRobot();
-			
 			this.DrawFruits();
-		
+			this.drawGradeTime();
 			StdDraw.show();
 			try {
 				sleep(10);
@@ -600,62 +729,45 @@ public class MyGameGUI implements ActionListener, MouseListener, Runnable {
 	}
 
 	public static void main(String[] args) {
-
-		// MyGameGUI myg1 = new MyGameGUI(1);
 		MyGameGUI myg2 = new MyGameGUI();
-		myg2.startGame(1);
-		// MyGameGUI myg3 = new MyGameGUI(3);
-//		MyGameGUI myg4 = new MyGameGUI(4);
-//		MyGameGUI myg5 = new MyGameGUI(5);
-//		MyGameGUI myg6 = new MyGameGUI(6);
-//		MyGameGUI myg7 = new MyGameGUI(7);
-//		MyGameGUI myg8 = new MyGameGUI(8);
-//		MyGameGUI myg9 = new MyGameGUI(9);
-//		MyGameGUI myg10 = new MyGameGUI(10);
-//		MyGameGUI myg11 = new MyGameGUI(11);
-//		MyGameGUI myg12 = new MyGameGUI(12);
-//		MyGameGUI myg13 = new MyGameGUI(13);
-//		MyGameGUI myg14 = new MyGameGUI(14);
-//		MyGameGUI myg15 = new MyGameGUI(15);
-//		MyGameGUI myg16 = new MyGameGUI(16);
-//		MyGameGUI myg17 = new MyGameGUI(17);
-//		MyGameGUI myg18 = new MyGameGUI(18);
-
 	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		// TODO Auto-generated method stub
+		;
+	}
 
+	public void mouseClicked() {
+		;
 	}
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		// TODO Auto-generated method stub
-
+		;
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
+		;
 
 	}
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
+		;
 
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
+		;
 
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		// TODO Auto-generated method stub
+		;
 
 	}
+
 }

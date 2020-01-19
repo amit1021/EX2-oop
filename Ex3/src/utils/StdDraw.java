@@ -814,7 +814,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 		return h * height / Math.abs(ymax - ymin);
 	}
 
-	private static double userX(double x) {
+	public static double userX(double x) {
 		return xmin + x * (xmax - xmin) / width;
 	}
 

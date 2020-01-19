@@ -13,6 +13,7 @@ public class InitiateGame {
 	private ArrayList<Robot> Robots = new ArrayList<Robot>();
 	final double EPSILON = 0.0001;
 
+
 	public InitiateGame(String graph) {
 		initGraphFromJSON(graph);
 	}

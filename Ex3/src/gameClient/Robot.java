@@ -6,6 +6,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import dataStructure.edge_data;
 import dataStructure.node_data;
 import utils.Point3D;
 
@@ -16,7 +17,9 @@ public class Robot {
 	private int dest;
 	private double speed;
 	private Point3D location;
-	private List<node_data> shortPath;
+	private List<node_data> shortPath =new ArrayList<node_data>();
+	private edge_data FruitEdge =null;
+	
 
 	public Robot(int id, double value, int src, int dest, double speed, Point3D location) {
 		this.id = id;
@@ -25,7 +28,6 @@ public class Robot {
 		this.dest = dest;
 		this.speed = speed;
 		this.location = location;
-		this.shortPath = new ArrayList<node_data>();
 	}
 
 	public Robot(Robot r) {
@@ -107,6 +109,11 @@ public class Robot {
 	public Point3D getLocation() {
 		return this.location;
 	}
+	
+
+	public edge_data getEdge() {
+		return this.FruitEdge;
+	}
 
 	public void setLocation(String p) {
 		this.location = new Point3D(p);
@@ -137,5 +144,8 @@ public class Robot {
 	
 	public List<node_data> getShortPath() {
 		return this.shortPath;
+	}
+	public void setEdge(edge_data fruitEdge) {
+		this.FruitEdge = fruitEdge;
 	}
 }
