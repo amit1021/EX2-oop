@@ -1,13 +1,7 @@
 package gameClient;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import dataStructure.edge_data;
-import dataStructure.node_data;
 import utils.Point3D;
 
 public class Robot {
@@ -17,9 +11,6 @@ public class Robot {
 	private int dest;
 	private double speed;
 	private Point3D location;
-	private List<node_data> shortPath =new ArrayList<node_data>();
-	private edge_data FruitEdge =null;
-	
 
 	public Robot(int id, double value, int src, int dest, double speed, Point3D location) {
 		this.id = id;
@@ -37,7 +28,6 @@ public class Robot {
 		this.dest = r.dest;
 		this.speed = r.speed;
 		this.location = r.location;
-		this.shortPath = r.shortPath;
 	}
 
 	public Robot() {
@@ -84,8 +74,6 @@ public class Robot {
 		}
 	}
 
-
-
 	public int getId() {
 		return this.id;
 	}
@@ -108,11 +96,6 @@ public class Robot {
 
 	public Point3D getLocation() {
 		return this.location;
-	}
-	
-
-	public edge_data getEdge() {
-		return this.FruitEdge;
 	}
 
 	public void setLocation(String p) {
@@ -138,14 +121,5 @@ public class Robot {
 	public void setSpeed(double speed) {
 		this.speed = speed;
 	}
-	public void setShortPath(List<node_data>shortPath) {
-		this.shortPath = shortPath;
-	}
-	
-	public List<node_data> getShortPath() {
-		return this.shortPath;
-	}
-	public void setEdge(edge_data fruitEdge) {
-		this.FruitEdge = fruitEdge;
-	}
+
 }

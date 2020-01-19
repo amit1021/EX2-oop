@@ -1,11 +1,10 @@
 package gameClient;
 
 import java.util.ArrayList;
-import java.util.Collection;
-
+import Server.game_service;
 import dataStructure.DGraph;
 import dataStructure.edge_data;
-import dataStructure.node_data;
+import utils.Point3D;
 
 public class InitiateGame {
 	private DGraph g;
@@ -13,27 +12,29 @@ public class InitiateGame {
 	private ArrayList<Robot> Robots = new ArrayList<Robot>();
 	final double EPSILON = 0.0001;
 
-
+	// initializes the graph from the json file
 	public InitiateGame(String graph) {
 		initGraphFromJSON(graph);
 	}
 
+	// initializes the graph from the json file
 	public void initGraphFromJSON(String s) {
 		g = new DGraph();
 		g.initFromJSON(s);
 	}
 
+	// initializes the fruits from the json file
 	public void initFruitFromJSON(String s) {
-	//	Fruits.clear();
 		try {
 			Fruit f = new Fruit(s);
 			Fruits.add(f); // Add the new fruit to the list
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println(s);
 	}
 
+	// initializes the robots from the json file
 	public void initRobotFromJSON(String s) {
 		try {
 			Robot r = new Robot(s);
@@ -43,29 +44,29 @@ public class InitiateGame {
 		}
 	}
 
-
-	public int getRobotIdHelp(node_data n) {
-		// checks whether there is a robot on the vertex
-		for (int i = 0; i < Robots.size(); i++) {
-			if (Math.abs(Robots.get(i).getLocation().x() - n.getLocation().x()) <= EPSILON
-					&& Math.abs(Robots.get(i).getLocation().y() - n.getLocation().y()) <= EPSILON) {
-				return Robots.get(i).getId();
-			}
+	// Position the robot in the optimal place
+	public void placeRobot(ArrayList<Robot> robot, ArrayList<Fruit> fruit, game_service game) {
+		for (Robot r : robot) {
+			edge_data e = Utils.maxFruitValue(robot, fruit, g); // the edge on which the fruit is found with the
+																// greatest value
+			// initiate the location where the robot will starts
+			Point3D robotStart = g.getNode(e.getSrc()).getLocation();
+			r.setSrc(e.getSrc());
+			r.setDest(-1);
+			r.setLocation(robotStart);
+			game.addRobot(e.getSrc());
+			System.out.println(game.getRobots());
 		}
-		return -1;
 	}
 
-	public int getRobotByLocation(double x, double y) {
-		for (int i = 0; i < this.Robots.size(); i++) {
-			double robotX = this.Robots.get(i).getLocation().x();
-			double robotY = this.Robots.get(i).getLocation().y();
-			if (robotX == x && robotY == y) {
-				return this.Robots.get(i).getId();
-			}
+	// add robots to the list
+	public void initRobot(ArrayList<Robot> robot, int numOfRobots) {
+		for (int i = 0; i < numOfRobots; i++) {
+			robot.add(new Robot(i));
 		}
-		return -1;
 	}
 
+	// returns the type of fruit
 	public String typeOfFruit(Fruit f) {
 		if (f.getType() == 1) {
 			return "apple.png";
@@ -74,54 +75,17 @@ public class InitiateGame {
 		}
 	}
 
-	public edge_data matchFruitToEdge(Fruit f) {
-		Collection<node_data> V = g.getV();
-		for (node_data vertex : V) {
-			Collection<edge_data> edge = g.getE(vertex.getKey());
-			if (edge != null) {
-				for (edge_data e : edge) {
-					// check if the fruit on the edge and return the type of the fruit
-					double srcX = vertex.getLocation().x();
-					double srcY = vertex.getLocation().y();
-					double FruitX = f.getLocation().x();
-					double FruitY = f.getLocation().y();
-					double destX = g.getNode(e.getDest()).getLocation().x();
-					double destY = g.getNode(e.getDest()).getLocation().y();
-					double disSrc = calculateDistanceBetweenPoints(srcX, srcY, FruitX, FruitY);
-					double disDest = calculateDistanceBetweenPoints(destX, destY, FruitX, FruitY);
-					double disSrcDest = calculateDistanceBetweenPoints(srcX, srcY, destX, destY);
-					if (Math.abs(disSrcDest - (disSrc + disDest)) <= EPSILON) {
-						if (f.getType() == 1) {
-							if (srcY < destY) {
-								return e;
-							}
-						}
-						if (f.getType() == -1) {
-							if (srcY > destY) {
-								return e;
-							}
-						}
-					}
-				}
-
-			}
-		}
-		return null;
-	}
-
-	// calculate distance between two points
-	public double calculateDistanceBetweenPoints(double x1, double y1, double x2, double y2) {
-		return Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
-	}
-
+	// return the fruits list
 	public ArrayList<Fruit> Fruits() {
 		return this.Fruits;
 	}
 
+	// return the robots list
 	public ArrayList<Robot> Robots() {
 		return this.Robots;
 	}
 
+	// return the graph
 	public DGraph graph() {
 		return this.g;
 	}
