@@ -521,9 +521,4 @@ public class MyGameGUI implements MouseListener {
 
 	}
 
-	public static void main(String[] args) {
-		MyGameGUI myg2 = new MyGameGUI();
-
-	}
-
 }

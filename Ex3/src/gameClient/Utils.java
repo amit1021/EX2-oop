@@ -118,12 +118,7 @@ public class Utils {
 		}
 		return null;
 	}
-
-	// calculate distance between two points
-	public static double calculateDistanceBetweenPoints(double x1, double y1, double x2, double y2) {
-		return Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
-	}
-
+	
 	// finding the fruit closest to the robot
 	public static edge_data closestFruit(ArrayList<Fruit> fruit, graph g, Graph_Algo ga, int robotSrc) {
 		edge_data fruitEdge = new edgeData();
