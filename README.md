@@ -4,7 +4,7 @@ This assignment is based on EX2.
 The main purpose of the assignment is to develop game logic.  
 Where a group of robots has to perform movement tasks (fruit collection) on a weighted graph.  
 
-**package dataStructure (Taken from Ex2):
+**package dataStructure (Taken from Ex2):**
 
 **nodeData: this class implements node_data interface.
 nodeData represents the set of operations applicable on a node (vertex) in a (directional) weighted graph.
@@ -15,12 +15,12 @@ edgrData represents the set of operations applicable on a directional edge(src,d
 **DGraph: this class implemens graph interface.
 DGraph represents a directional weighted graph, should support a large number of nodes (over 100,000).  
 
-**package algorithems(Taken from Ex2):
+**package algorithems(Taken from Ex2):**
 
 Graph-Algo: this class implements graph-algorithems interface.
 Graph-Algo represents the "regular" Graph Theory algorithms.  
 
-**package gameClient:  
+**package gameClient:**  
 
 **comperator: comperator between fruit value.
 
