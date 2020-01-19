@@ -30,7 +30,8 @@ Graph-Algo represents the "regular" Graph Theory algorithms.
 
 **initiateGame: initiate the graph, Fruits and Robots of the game.
 
-**MyGameGui: drew the graph, Fruits and Robot. start the tow type of the game. 
+**MyGameGui: this class responsible for the presentation of the graph, Robots and Fruits.   
+start the two type of the game. 
 
 **Utils: all the help function in the various classes. 
 
