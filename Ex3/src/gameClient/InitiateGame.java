@@ -2,6 +2,7 @@ package gameClient;
 
 import java.util.ArrayList;
 import Server.game_service;
+import algorithms.Graph_Algo;
 import dataStructure.DGraph;
 import dataStructure.edge_data;
 import utils.Point3D;
@@ -28,6 +29,7 @@ public class InitiateGame {
 		try {
 			Fruit f = new Fruit(s);
 			Fruits.add(f); // Add the new fruit to the list
+			Utils.matchFruitToEdge(g, f);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

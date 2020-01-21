@@ -2,18 +2,24 @@ package gameClient;
 
 import org.json.JSONObject;
 
+import dataStructure.edge_data;
 import utils.Point3D;
 
 public class Fruit {
 	private int type;
 	private double value;
+	private edge_data edge;
 	private Point3D location;
-	private boolean exists = true;
 
 	public Fruit(int type, double value, Point3D location) {
 		this.type = type;
 		this.value = value;
 		this.location = location;
+		this.edge = null;
+	}
+
+	public Fruit() {
+		;
 	}
 
 	public Fruit(String s) {
@@ -60,11 +66,12 @@ public class Fruit {
 		return this.location;
 	}
 
-	public boolean getExists() {
-		return this.exists;
+	public edge_data getEdge() {
+		return this.edge;
 	}
 
-	public void setExists(boolean b) {
-		this.exists = b;
+	public void setEdge(edge_data e) {
+		this.edge = e;
 	}
+
 }

@@ -1,7 +1,6 @@
 package gameClient;
 
 import java.util.Collection;
-
 import java.util.Iterator;
 import java.util.List;
 
@@ -28,7 +27,6 @@ import oop_dataStructure.oop_graph;
  * 10. prints the game results (after "game over"): (line 63)
  *  
  * @author boaz.benmoshe
- * 
  *
  */
 public class SimpleGameClient {
@@ -87,6 +85,7 @@ public class SimpleGameClient {
 				
 					if(dest==-1) {	
 						dest = nextNode(gg, src);
+						
 						game.chooseNextEdge(rid, dest);
 						System.out.println("Turn to node: "+dest+"  time to end:"+(t/1000));
 						System.out.println(ttt);

@@ -6,8 +6,9 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="lib/java-json.jar"/>
-	<classpathentry kind="lib" path="lib/GameServer_v0.27.jar" sourcepath="C:/Users/Ohad/Desktop/שולחן עבודה/לימודים/מונחה עצמים/Ex3_v2/Ex3_v2/lib/GameServer_v0.27.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Ohad/Downloads/json-simple-1.1.jar/json-simple-1.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
+	<classpathentry kind="lib" path="C:/Users/Ohad/Downloads/Ex4_v0.33/Ex4_v0.33/lib/GameServer_v0.33.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Ohad/Downloads/Ex4_v0.33/Ex4_v0.33/lib/java-json.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Ohad/Downloads/Ex4_v0.33/Ex4_v0.33/lib/mysql-connector-java-5.1.47.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

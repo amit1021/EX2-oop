@@ -76,17 +76,6 @@ public class Utils {
 		return e1;
 	}
 
-	// marking false to know that the fruit is already eaten
-	public static void doFalseToFruit(ArrayList<Fruit> fruit, Point3D p) {
-		for (Fruit f : fruit) {
-			double currX = f.getLocation().x();
-			double currY = f.getLocation().y();
-			if (currX - p.x() == 0 && currY - p.y() == 0) {
-				f.setExists(false);
-			}
-		}
-	}
-
 	// sorting the fruits from high value to low value
 	public static void sortFruits(ArrayList<Fruit> fruit) {
 		Comperator c = new Comperator();
@@ -109,52 +98,35 @@ public class Utils {
 	}
 
 	// finding the edge on which the fruit is
-	public static edge_data matchFruitToEdge(graph g, Fruit f) {
-		Collection<node_data> V = g.getV();
-		for (node_data vertex : V) {
-			Collection<edge_data> edge = g.getE(vertex.getKey());
-			if (edge != null) {
-				for (edge_data e : edge) {
-					// check if the fruit on the edge and return the type of the fruit
-					double srcX = vertex.getLocation().x();
-					double srcY = vertex.getLocation().y();
-					double FruitX = f.getLocation().x();
-					double FruitY = f.getLocation().y();
-					double destX = g.getNode(e.getDest()).getLocation().x();
-					double destY = g.getNode(e.getDest()).getLocation().y();
-					double disSrc = calculateDistanceBetweenPoints(srcX, srcY, FruitX, FruitY);
-					double disDest = calculateDistanceBetweenPoints(destX, destY, FruitX, FruitY);
-					double disSrcDest = calculateDistanceBetweenPoints(srcX, srcY, destX, destY);
-					if (Math.abs(disSrcDest - (disSrc + disDest)) <= EPSILON) {
-						if (f.getType() == 1) {
-							if (srcY < destY) {
-								return e;
-							}
-						}
-						if (f.getType() == -1) {
-							if (srcY > destY) {
-								return e;
-							}
-						}
-					}
+	public static void matchFruitToEdge(graph g, Fruit fruit) {
+		for (node_data vertex : g.getV()) {
+			for (edge_data e : g.getE(vertex.getKey())) {
+				// check if the fruit on the edge and return the type of the fruit
+				node_data dest = g.getNode(e.getDest());
+				double dist1 = vertex.getLocation().distance2D(fruit.getLocation());
+				double dist2 = fruit.getLocation().distance2D(dest.getLocation());
+				double dist = vertex.getLocation().distance2D(dest.getLocation());
+				double res = dist - (dist1 + dist2);
+				int type = 1;
+				if (vertex.getKey() > dest.getKey()) {
+					type = -1;
 				}
-
+				if ((Math.abs(res) <= Point3D.EPS2) && (fruit.getType() == type)) {
+					fruit.setEdge(e);
+				}
 			}
 		}
-		return null;
-	}
-
-	// calculate distance between two points
-	public static double calculateDistanceBetweenPoints(double x1, double y1, double x2, double y2) {
-		return Math.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
 	}
 
 	// finding the fruit closest to the robot
-	public static edge_data closestFruit(ArrayList<Fruit> fruit, graph g, Graph_Algo ga, int robotSrc) {
-		edge_data fruitEdge = new edgeData();
+	public static Fruit closestFruit(ArrayList<Fruit> fruit, graph g, Graph_Algo ga, int robotSrc) {
+		Fruit closeFruit = new Fruit();
 		double shortestPath = INFINITE;
 		for (Fruit f : fruit) {
-			edge_data currFruitEdge = matchFruitToEdge(g, f);
+			edge_data currFruitEdge = f.getEdge();
+			if (currFruitEdge == null) {
+				return null;
+			}
 			int fruitSrc = currFruitEdge.getSrc();
 			// the length of the path from the robot to the fruit f
 			double currentPath = ga.shortestPathDist(robotSrc, fruitSrc);
@@ -162,30 +134,19 @@ public class Utils {
 			// the shortest distance will be equal to the current distance
 			if (currentPath < shortestPath) {
 				shortestPath = currentPath;
-				fruitEdge = currFruitEdge;
-				doFalseToFruit(fruit, f.getLocation());
+				closeFruit = f;
 			}
 		}
-
-		return fruitEdge;
+		return closeFruit;
 	}
 
-	// Finding the fruit with the greatest value and return the edge of this fruit
+	// return the edge of this fruit with the greater value
 	public static edge_data maxFruitValue(ArrayList<Robot> robot, ArrayList<Fruit> fruit, graph g) {
-		double maxValue = MINUS_INFINITE;
-		edge_data e = new edgeData();
-		for (Fruit f : fruit) {
-			// checks if the current value is greater than the maxValue
-			if (f.getvValue() > maxValue) {
-				// the edge of the fruit with the greatest value
-				edge_data e1 = Utils.matchFruitToEdge(g, f);
-				if (!Utils.existsRobot(robot, e1.getSrc())) { // Check if a robot already exists there
-					maxValue = f.getvValue();
-					e = Utils.matchFruitToEdge(g, f);
-				}
-			}
+		sortFruits(fruit);
+		if (!fruit.isEmpty()) {
+			return fruit.get(0).getEdge();
 		}
-		return e;
+		return null;
 	}
 
 	// returns the id of the robot adjacent to the clicked vertex

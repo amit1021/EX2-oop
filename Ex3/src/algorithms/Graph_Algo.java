@@ -154,7 +154,7 @@ public class Graph_Algo implements graph_algorithms, Serializable {
 			throw new RuntimeException("No path");
 		}
 		String ans = this.Dgraph.getNode(dest).getInfo();// the string of the short path
-		ans = ans.substring(ans.indexOf(",") + 1);
+		ans = ans.substring(ans.indexOf(",")+1);
 		ans += this.Dgraph.getNode(dest).getKey(); // add the destination
 		String[] node = ans.split(",");
 		for (int i = 0; i < node.length; i++) {
