@@ -11,6 +11,7 @@ public class Robot {
 	private int dest;
 	private double speed;
 	private Point3D location;
+	private Fruit fruitTarget;
 
 	public Robot(int id, double value, int src, int dest, double speed, Point3D location) {
 		this.id = id;
@@ -19,6 +20,7 @@ public class Robot {
 		this.dest = dest;
 		this.speed = speed;
 		this.location = location;
+		this.fruitTarget = null;
 	}
 
 	public Robot(Robot r) {
@@ -28,6 +30,7 @@ public class Robot {
 		this.dest = r.dest;
 		this.speed = r.speed;
 		this.location = r.location;
+		this.fruitTarget = r.fruitTarget;
 	}
 
 	public Robot() {
@@ -39,7 +42,6 @@ public class Robot {
 	}
 
 	public Robot(String s) {
-		this();
 		try {
 			JSONObject obj_JsonObject = new JSONObject(s);
 			JSONObject JSON_Robot = obj_JsonObject.getJSONObject("Robot");
@@ -55,7 +57,6 @@ public class Robot {
 			this.speed = speed;
 			String pos = JSON_Robot.getString("pos");// Extract the coordinates to String
 			this.location = new Point3D(pos);
-			// Point3D p = getXYZ(pos); // get p coordinates from getXYZ function
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -120,6 +121,14 @@ public class Robot {
 
 	public void setSpeed(double speed) {
 		this.speed = speed;
+	}
+
+	public Fruit getFruitTarget() {
+		return this.fruitTarget;
+	}
+
+	public void setFruitTarget(Fruit f) {
+		this.fruitTarget = f;
 	}
 
 }

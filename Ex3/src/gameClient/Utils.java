@@ -98,7 +98,7 @@ public class Utils {
 	}
 
 	// finding the edge on which the fruit is
-	public static edge_data matchFruitToEdge(graph g, Fruit fruit) {
+	public static void matchFruitToEdge(graph g, Fruit fruit) {
 		for (node_data vertex : g.getV()) {
 			for (edge_data e : g.getE(vertex.getKey())) {
 				// check if the fruit on the edge and return the type of the fruit
@@ -112,51 +112,47 @@ public class Utils {
 					type = -1;
 				}
 				if ((Math.abs(res) <= Point3D.EPS2) && (fruit.getType() == type)) {
-					return e;
+					fruit.setEdge(e);
 				}
 			}
 		}
-		return null;
 	}
-	
+
 	// finding the fruit closest to the robot
-	public static edge_data closestFruit(ArrayList<Fruit> fruit, graph g, Graph_Algo ga, int robotSrc) {
-		edge_data fruitEdge = new edgeData();
+	public static Fruit closestFruit(ArrayList<Fruit> fruit, graph g, Graph_Algo ga, int robotSrc) {
+		Fruit closeFruit = new Fruit();
 		double shortestPath = INFINITE;
 		for (Fruit f : fruit) {
-			edge_data currFruitEdge = matchFruitToEdge(g, f);
+			edge_data currFruitEdge = f.getEdge();
 			if (currFruitEdge == null) {
 				return null;
 			}
 			int fruitSrc = currFruitEdge.getSrc();
 			// the length of the path from the robot to the fruit f
-			double currentPath = ga.shortestPathDist(robotSrc, fruitSrc);
+			double currentPath = ga.shortestPathDist(robotSrc, fruitSrc)+currFruitEdge.getWeight();
 			// if the current distance is smaller than the shortest distance then replace so
 			// the shortest distance will be equal to the current distance
-			if (currentPath < shortestPath) {
-				shortestPath = currentPath;
-				fruitEdge = currFruitEdge;
-			}
-		}
-		return fruitEdge;
-	}
+//			if (dis(fruit, f, ga) || robotSrc == fruitSrc) {
 
-	// Finding the fruit with the greatest value and return the edge of this fruit
-	public static edge_data maxFruitValue(ArrayList<Robot> robot, ArrayList<Fruit> fruit, graph g) {
-		double maxValue = MINUS_INFINITE;
-		edge_data e = new edgeData();
-		for (Fruit f : fruit) {
-			// checks if the current value is greater than the maxValue
-			if (f.getvValue() > maxValue) {
-				// the edge of the fruit with the greatest value
-				edge_data e1 = Utils.matchFruitToEdge(g, f);
-				if (!Utils.existsRobot(robot, e1.getSrc())) { // Check if a robot already exists there
-					maxValue = f.getvValue();
-					e = Utils.matchFruitToEdge(g, f);
+				if (currentPath < shortestPath) {
+					shortestPath = currentPath;
+					closeFruit = f;
 				}
 			}
+	//	}
+		return closeFruit;
+	}
+
+	// return the edge of this fruit with the greater value
+	public static edge_data maxFruitValue(ArrayList<Robot> robot, ArrayList<Fruit> fruit, graph g) {
+		sortFruits(fruit);
+		if (!fruit.isEmpty()) {
+			for (Fruit f : fruit) {
+				if (!existsRobot(robot, f.getEdge().getSrc()))
+					return f.getEdge();
+			}
 		}
-		return e;
+		return null;
 	}
 
 	// returns the id of the robot adjacent to the clicked vertex

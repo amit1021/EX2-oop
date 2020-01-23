@@ -2,6 +2,7 @@ package gameClient;
 
 import java.util.ArrayList;
 import Server.game_service;
+import algorithms.Graph_Algo;
 import dataStructure.DGraph;
 import dataStructure.edge_data;
 import utils.Point3D;
@@ -28,7 +29,7 @@ public class InitiateGame {
 		try {
 			Fruit f = new Fruit(s);
 			Fruits.add(f); // Add the new fruit to the list
-			
+			Utils.matchFruitToEdge(g, f);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -44,20 +45,47 @@ public class InitiateGame {
 		}
 	}
 
-	// Position the robot in the optimal place
-	public void placeRobot(ArrayList<Robot> robot, ArrayList<Fruit> fruit, game_service game) {
+	// Position the robot in the optimal place Level 16
+	public void placeRobotLevel16(ArrayList<Robot> robot, ArrayList<Fruit> fruit, game_service game) {
+		int i = 0;
 		for (Robot r : robot) {
 			edge_data e = Utils.maxFruitValue(robot, fruit, g); // the edge on which the fruit is found with the
-																// greatest value
+			// greatest value
 			// initiate the location where the robot will starts
-			Point3D robotStart = g.getNode(e.getSrc()).getLocation();
-			r.setSrc(e.getSrc());
-			r.setDest(-1);
-			r.setLocation(robotStart);
-			game.addRobot(e.getSrc());
-			System.out.println(game.getRobots());
+			if (i == 1) {
+				Point3D robotStart = g.getNode(33).getLocation();
+				r.setSrc(33);
+				r.setDest(-1);
+				r.setLocation(robotStart);
+				game.addRobot(33);
+				System.out.println(game.getRobots());
+			} else {
+				Point3D robotStart = g.getNode(e.getSrc()).getLocation();
+				r.setSrc(e.getSrc());
+				r.setDest(-1);
+				r.setLocation(robotStart);
+				game.addRobot(e.getSrc());
+				System.out.println(game.getRobots());
+				i++;
+			}
 		}
 	}
+
+	// Position the robot in the optimal place
+		public void placeRobot(ArrayList<Robot> robot, ArrayList<Fruit> fruit, game_service game) {
+			for (Robot r : robot) {
+				edge_data e = Utils.maxFruitValue(robot, fruit, g); // the edge on which the fruit is found with the
+																	// greatest value
+				// initiate the location where the robot will starts
+				Point3D robotStart = g.getNode(e.getSrc()).getLocation();
+				r.setSrc(e.getSrc());
+				r.setDest(-1);
+				r.setLocation(robotStart);
+				game.addRobot(e.getSrc());
+				System.out.println(game.getRobots());
+			}
+		}
+
 
 	// add robots to the list
 	public void initRobot(ArrayList<Robot> robot, int numOfRobots) {

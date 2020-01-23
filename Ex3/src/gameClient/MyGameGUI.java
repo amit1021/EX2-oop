@@ -12,7 +12,6 @@ import javax.swing.JOptionPane;
 import static java.lang.Thread.sleep;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import Server.Game_Server;
 import Server.game_service;
 import algorithms.Graph_Algo;
@@ -33,12 +32,15 @@ public class MyGameGUI implements MouseListener {
 	final static int MINUS_INFINITE = Integer.MIN_VALUE;
 	final static double EPSILON = 0.0001;
 	public static KML_Logger kml = null;
+	private static DataBase DB;
 
 	public MyGameGUI() {
 		optionGame();
 	}
 
-	public void startGameAuto(int scenario_num) {
+	public void startGameAuto(int scenario_num, int ID) {
+		Game_Server.login(ID);
+		DB = new DataBase();
 		game = Game_Server.getServer(scenario_num); // you have [0,23] games
 		String graph = game.getGraph();
 		gameGraph = new InitiateGame(graph);
@@ -56,15 +58,20 @@ public class MyGameGUI implements MouseListener {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		gameGraph.placeRobot(robot(), fruit(), game);
+		if (scenario_num == 16) {
+			gameGraph.placeRobotLevel16(robot(), fruit(), game);
+		
+		}else {
+			gameGraph.placeRobot(robot(), fruit(), game);
+		}
 		initGraph();
 		DrawGraph();
 		DrawFruits();
 		game.startGame();
-		runAuto();
+		runAuto(scenario_num, ID);
 
 	}
+
 //Game Manual 
 	public void startGameManual(int scenario_num) {
 		game = Game_Server.getServer(scenario_num); // you have [0,23] games
@@ -90,8 +97,8 @@ public class MyGameGUI implements MouseListener {
 		DrawFruits();
 		StdDraw.show();
 		int numberRobots = numOfRobots;
-		//Position the robots at the player's request
-		while (numberRobots > 0) { 
+		// Position the robots at the player's request
+		while (numberRobots > 0) {
 			String place = JOptionPane.showInputDialog("Please select a vertex that does not have a robot ");
 			if (place == null) {
 				System.exit(0);
@@ -117,7 +124,7 @@ public class MyGameGUI implements MouseListener {
 		StdDraw.setCanvasSize(1100, 600);
 		Range x = Utils.rangeX(gameGraph.graph().getV());
 		Range y = Utils.rangeY(gameGraph.graph().getV());
-		 //set scales
+		// set scales
 		StdDraw.setXscale(x.get_min() - 5, x.get_max() + 5);
 		StdDraw.setYscale(y.get_min() - 5, y.get_max() + 5);
 		DrawGraph();
@@ -125,15 +132,19 @@ public class MyGameGUI implements MouseListener {
 		DrawRobot();
 		StdDraw.show();
 	}
- //Choose which game to play.
+
+	// Choose which game to play.
 	private void optionGame() {
 		int scenario_num = -1;
+		int ID = 0;
+		String ID_string = JOptionPane.showInputDialog("Please enter you'r ID");
 		String scenario_str = JOptionPane.showInputDialog("Please select a scenario from 0 to 23"); // window to select
 																									// a scenario
 		if (scenario_str == null) {
 			System.exit(0);
 		}
 		try {
+			ID = Integer.parseInt(ID_string);
 			scenario_num = Integer.parseInt(scenario_str);
 
 		} catch (Exception e) {
@@ -146,13 +157,14 @@ public class MyGameGUI implements MouseListener {
 		if (typeOfGame == null) {
 			System.exit(0);
 		}
-		//Automatic game
+		// Automatic game
 		if (typeOfGame == "Automatic Game") {
 			StdDraw.clear();
 			StdDraw.enableDoubleBuffering();
 			kml = new KML_Logger(scenario_num);
-			startGameAuto(scenario_num);
-			//Game manual
+
+			startGameAuto(scenario_num, ID);
+			// Game manual
 		} else {
 			StdDraw.clear();
 			StdDraw.enableDoubleBuffering();
@@ -161,8 +173,8 @@ public class MyGameGUI implements MouseListener {
 		}
 
 	}
-	
-	//update the robots while the game is running 
+
+	// update the robots while the game is running
 	public void updateRobots(List<String> r) {
 		Robot robot;
 		for (int i = 0; i < r.size(); i++) {
@@ -174,7 +186,7 @@ public class MyGameGUI implements MouseListener {
 				robot = Utils.getRobot(robot(), ttt.getInt("id"));
 				robot.getInfoFromJson(ttt);
 				robot.setDest(-1);
-				if (MyGameGUI.kml != null) { 
+				if (MyGameGUI.kml != null) {
 					// add to the KML
 					MyGameGUI.kml.addPlaceMark("robot", Utils.getRobot(robot(), i).getLocation().toString());
 				}
@@ -183,20 +195,21 @@ public class MyGameGUI implements MouseListener {
 			}
 		}
 	}
-
-	//update the fruit while the game is running 
+	// update the fruit while the game is running
 	public void updateFruits() {
+		fruit().clear();
 		List<String> updateFruits = this.game.getFruits();
 		if (updateFruits != null) {
-			for (int i = 0; i < fruit().size(); i++) {
-				fruit().get(i).update(updateFruits.get(i));
+			for (int i = 0; i < updateFruits.size(); i++) {
+				fruit().add(new Fruit(updateFruits.get(i)));
+				Utils.matchFruitToEdge(gameGraph.graph(), fruit().get(i));
 				if (MyGameGUI.kml != null) {
-					//add to the KML
+					// add to the KML
 					if (fruit().get(i).getType() == 1) {
-						//the type is apple
+						// the type is apple
 						MyGameGUI.kml.addPlaceMark("apple", fruit().get(i).getLocation().toString());
 					} else {
-						//the type is banana
+						// the type is banana
 						MyGameGUI.kml.addPlaceMark("banana", fruit().get(i).getLocation().toString());
 					}
 				}
@@ -289,10 +302,13 @@ public class MyGameGUI implements MouseListener {
 	// Draw the grade and the time
 	public void drawGradeTime() {
 		int grade = 0;
+		int moves = 0;
+		int level = 0;
 		try {
 			JSONObject gameServer = new JSONObject(game.toString()).getJSONObject("GameServer"); // the grade from the
-																									// game
+			moves = gameServer.getInt("moves"); // game
 			grade = gameServer.getInt("grade");
+			level = gameServer.getInt("game_level");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -300,14 +316,15 @@ public class MyGameGUI implements MouseListener {
 		// set the position of the text
 		double x = Utils.rangeX(gameGraph.graph().getV()).get_min()
 				+ Utils.rangeX(gameGraph.graph().getV()).get_length() / 2;
-		double y = Utils.rangeY(gameGraph.graph().getV()).get_max();
-//				+ Utils.rangeX(gameGraph.graph().getV()).get_length() / 10;
+		double y = Utils.rangeY(gameGraph.graph().getV()).get_max()
+				+ Utils.rangeX(gameGraph.graph().getV()).get_length() / 20;
 		// set pen
 		Font font = new Font("BN anna", Font.BOLD, 20);
 		StdDraw.setFont(font);
 		StdDraw.setPenColor(Color.PINK);
 		// draw text
-		StdDraw.text(x, +y, "{ Grade: " + grade + ",  Time left :" + timeToEnd + "  }");
+		StdDraw.text(x, +y, "{ Level : " + level + ", Grade: " + grade + ",  Moves: " + moves + ",  Time left :"
+				+ timeToEnd + "  }");
 	}
 
 	/** Get/Set function **/
@@ -324,7 +341,7 @@ public class MyGameGUI implements MouseListener {
 		return this.kml;
 	}
 
-	/** Automatic Game **/
+	/* Automatic Game */
 	private void moveRobot(game_service game, graph graph) {
 		List<String> log = game.move();
 		if (log != null) {
@@ -337,61 +354,150 @@ public class MyGameGUI implements MouseListener {
 					int rid = ttt.getInt("id");
 					int src = ttt.getInt("src");
 					int dest = ttt.getInt("dest");
+					double speed = ttt.getDouble("speed");
+					String p_string = ttt.getString("pos");
+					Point3D p = new Point3D(p_string);
 					Graph_Algo ga = new Graph_Algo();
 					ga.init(graph);
-					if (dest == -1) {
-						edge_data fruitEdge = Utils.closestFruit(fruit(), gameGraph.graph(), ga, src);
+					if (dest == -1) {// the fruit don't have dest.
+						Fruit f = Utils.closestFruit(fruit(), gameGraph.graph(), ga, src);
+						Robot r = Utils.getRobot(robot(), rid);
+						if (f != r.getFruitTarget() && !f.getTarget()) { //check that the robot don't go to fruit that robot else go.
+							if (r.getFruitTarget() != null) {
+								r.getFruitTarget().setTarget(false);
+							}
+							f.setTarget(true);
+							r.setFruitTarget(f);
+						}
+						edge_data fruitEdge = r.getFruitTarget().getEdge();
 						List<node_data> shortList = ga.shortestPath(src, fruitEdge.getSrc());
-
-						if (src == fruitEdge.getSrc()) { // if the src of the robot and the src of the fruit edge are the same - move to fruit edge dest.
+						if (src == fruitEdge.getSrc()) { // if the src of the robot and the src of the fruit edge are
+															// the same - move to fruit edge dest.
+							Utils.getRobot(robot(), rid).setDest(fruitEdge.getDest());
 							game.chooseNextEdge(rid, fruitEdge.getDest());
 							System.out.println("Turn to node: " + fruitEdge.getDest() + "  time to end:" + (t / 1000));
 						}
-
 						else if (!shortList.isEmpty()) { // The robot has not yet reached fruit
 							dest = shortList.get(0).getKey();
+							Utils.getRobot(robot(), rid).setDest(dest);
 							game.chooseNextEdge(rid, dest);
 							System.out.println("Turn to node: " + dest + "  time to end:" + (t / 1000));
 						}
 					}
 				}
-
 				catch (JSONException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 	}
-	//Check if the edge between the src and the dest are exists.
+	// set thread with Boaz function.
+	public void setThread(Fruit f, double speed) {
+		edge_data fruitEdge = f.getEdge();
+		node_data dest = gameGraph.graph().getNode(fruitEdge.getDest());
+		node_data src = gameGraph.graph().getNode(fruitEdge.getSrc());
+		double currPath1 = src.getLocation().distance2D(dest.getLocation());
+		double currPath2 = src.getLocation().distance2D(f.getLocation());
+		long dt = (long) ((((currPath2 / currPath1) * fruitEdge.getWeight()) / speed) * 1000); //the log of the sleep
+		try {
+			sleep(dt);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	// Check if the edge between the src and the dest are exists.
 	public boolean existsEdge(int src, int dest) {
 		Collection<edge_data> edge = gameGraph.graph().getE(src);
 		for (edge_data e : edge) {
-			if (dest == e.getDest()) { 
+			if (dest == e.getDest()) {
 				return true;
 			}
 		}
 		return false;
 
 	}
+	//set the thread sleep for each scenario
+	public void checkSleep(int senario) {
+		long dt = 50;
+		if (senario == 19 || senario == 20 || senario == 16) {
+			if (senario == 19) {
+				dt=81;
+			}
+			if (senario == 20) {
+				dt=85;
+			}
+			if (senario == 16) {
+				dt=82;
+			}
+			for (Fruit f : fruit()) {
+				for (Robot r : robot()) {
+					if (r.getSrc() == f.getEdge().getSrc() && r.getDest() == f.getEdge().getDest()) {
+						setThread(f, r.getSpeed());
+						return;
+					}
+				}
+			}
+		}
+		if (senario == 23) {
+			dt=45;
+		for (Fruit f : fruit()) {
+			for (Robot r : robot()) {
+				if (r.getSrc() == f.getEdge().getSrc() && r.getDest() == f.getEdge().getDest()) {
+					try {
+						sleep(16);
+						return;
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+				}
+			}
+		}
+		}
+		if (senario == 13) {
+			dt = 82;
+		}
+		if (senario == 5) {
+			dt = 110;
+		}
+		if (senario == 9 || senario == 11) {
+			dt = 94;
+		}
+		
+		if (senario == 0 || senario == 1 || senario == 3 ) {
+			dt = 99;
+		}
+		try {
+			sleep(dt);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
 
-	public void runAuto() {
+	public void runAuto(int senario, int ID) {
 		while (this.game.isRunning()) {
-			updateRobots(game.move());
-			moveRobot(this.game, gameGraph.graph());
+			updateRobots(game.getRobots());
 			updateFruits();
+			moveRobot(this.game, gameGraph.graph());
 			this.DrawGraph();
 			this.DrawRobot();
 			this.DrawFruits();
 			this.drawGradeTime();
 			StdDraw.show();
-			try {
-				sleep(10);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			checkSleep(senario);
 		}
+
+		String res = game.toString();
+		kml.end(); //close the KML
+		String remark = kml.getString();
+		game.sendKML(remark); // send KML
 		KML();
-		gameOver();
+		System.out.println(res);
+		gameOver(); // show data about the game
+		DB = new DataBase();
+		displayScore(senario, ID); // show the table score
 	}
 
 	/** Manual game **/
@@ -409,7 +515,7 @@ public class MyGameGUI implements MouseListener {
 		}
 		return -1;
 	}
-
+	// move the robot according to the mouse press
 	private void moveRobotsManual(game_service game, graph gg) {
 		List<String> log = game.move();
 		if (log != null) {
@@ -423,23 +529,22 @@ public class MyGameGUI implements MouseListener {
 					int dest = ttt.getInt("dest");
 					if (dest == -1) {
 						if (StdDraw.isMousePressed()) {
-							int dest1 = mouseClick(); //take the coordinates 
-								game.chooseNextEdge(rid, dest1);
-							}
+							int dest1 = mouseClick(); // take the coordinates
+							game.chooseNextEdge(rid, dest1);
 						}
-					}					
-				 catch (JSONException e) {
+					}
+				} catch (JSONException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 	}
-
+//Position the robot at the user's request
 	public void placeRobotManual(int node) {
 		node_data n = gameGraph.graph().getNode(node);
 		if (n != null) {
 			// add all the robot to the game.
-			game.addRobot(n.getKey());//add robot to the game
+			game.addRobot(n.getKey());// add robot to the game
 			updateRobots(game.getRobots()); // update robot
 			robotsOnGraph++;
 			DrawRobot();
@@ -481,16 +586,47 @@ public class MyGameGUI implements MouseListener {
 
 		}
 	}
-
+//print the data about the game after the game is over
 	private void gameOver() {
 		try {
-			JSONObject gameServer = new JSONObject(game.toString()).getJSONObject("GameServer"); // the grade from  game
+			JSONObject gameServer = new JSONObject(game.toString()).getJSONObject("GameServer"); // the grade from game
 			int grade = gameServer.getInt("grade");
 			int move = gameServer.getInt("moves");
 			JOptionPane.showMessageDialog(null, "          Game Over \n Grade: " + grade + "  Moves: " + move);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+//display the table score of all the users
+	public void displayScore(int senario_num, int ID) {
+		DB.scoreTable(senario_num);
+		String[] res = DB.getAllScoresPerLevel();
+		int grade = 0;
+		int move = 0;
+		String yourScour = "";
+		int place = DB.getMyPlace(senario_num); //the place according to the best score
+		int bestScore = DB.bestScore(senario_num); // the best score
+		int[] moves = DB.getMoves();
+		try {
+			JSONObject gameServer = new JSONObject(game.toString()).getJSONObject("GameServer"); // the grade from game
+			grade = gameServer.getInt("grade"); // take the grade 
+			move = gameServer.getInt("moves");//take the moves
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (move <= moves[senario_num]) {
+			yourScour = "   You'r best score: \n"+ "  " +place + "     " + ID + "   " + bestScore+ " \n" +"          Your score: \n" +  "              " + grade ;  
+		} else {
+			yourScour = "   You'r best score: \n"+ place + "     " + ID + "   " + bestScore+ " \n" + "          Your score: \n" + "   Too many steps Please try again" ;
+		}
+
+		String massage = "  Place:    ID:        score: \n   " + "  1" + res[0] + "\n" + "    2" + res[1] + "\n"
+				+ "    3" + res[2] + "\n" + "    4" + res[3] + "\n" + "    5" + res[4] + "\n" + "    6" + res[5] + "\n"
+				+ "    7" + res[6] + "\n" + "    8" + res[7] + "\n" + "    9" + res[8] + "\n" + "    10" + res[9] + "\n"
+				+ yourScour;
+		;
+
+		JOptionPane.showMessageDialog(null, massage, "Score", JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	@Override
@@ -505,20 +641,21 @@ public class MyGameGUI implements MouseListener {
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
 
+	}
+
+	public static void main(String[] args) {
+		MyGameGUI mgg = new MyGameGUI();
 	}
 
 }

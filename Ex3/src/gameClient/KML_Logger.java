@@ -14,7 +14,10 @@ public class KML_Logger {
     public  KML_Logger(){
     	;
     }
-   
+    
+    public String getString() {
+        return string.toString();
+    }   
     
     public KML_Logger(int scenario_num) {
         this.scenario_num = scenario_num;
