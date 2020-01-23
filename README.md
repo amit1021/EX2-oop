@@ -35,4 +35,7 @@ start the two type of the game.
 
 **Utils: all the help function in the various classes. 
 
-**KML_Logger: this class allows to export the graph,Robots and Fruits to a KML file.
+**KML_Logger: this class allows to export the graph,Robots and Fruits to a KML file.  
+
+**HashMapComperator: this class is designed to compare values in HashMap to find the best scores in the game.
+
