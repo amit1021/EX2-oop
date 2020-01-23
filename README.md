@@ -37,5 +37,9 @@ start the two type of the game.
 
 **KML_Logger: this class allows to export the graph,Robots and Fruits to a KML file.  
 
-**HashMapComperator: this class is designed to compare values in HashMap to find the best scores in the game.
+**HashMapComperator: this class is designed to compare values in HashMap to find the best scores in the game.  
+
+**MyGameGui: this class is responsible for presenting the game to the user, draw the graph, the fruits, the robots, and updating them, the game allows the user to choose whether to play a manual or automatic game, in addition we give the user
+an option to select a level, and enter an ID, at the end of the game we show the user the top ten student scores for that specific level, the result he achieved in the game, his best result and his position relative to everyone.
+
 
